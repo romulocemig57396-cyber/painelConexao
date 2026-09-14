@@ -1,0 +1,553 @@
+/* ---------- Header ---------- */
+.app-header {
+  background: var(--header-green);
+  color: #fff;
+}
+
+.app-header__brandbar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+}
+
+.app-header__content {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-header__atualizacao {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.app-header__eyebrow {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 4px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* ---------- Layout ---------- */
+.app-main {
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+/* ---------- Metric cards ---------- */
+.metric-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.metric-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  width: 100%;
+}
+
+button.metric-card {
+  font: inherit;
+  color: inherit;
+}
+
+.metric-card--clicavel {
+  cursor: pointer;
+}
+
+.metric-card--clicavel:hover {
+  box-shadow: 0 2px 8px rgba(30, 90, 75, 0.14);
+}
+
+.metric-card--ativo {
+  border: 2px solid var(--petrol-green);
+  background: #eaf5f1;
+  padding: 15px 17px;
+}
+
+.metric-card__icon {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  background: var(--petrol-green);
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-card--late .metric-card__icon {
+  background: var(--late-text);
+}
+
+.metric-card--alert .metric-card__icon {
+  background: var(--alert-text);
+}
+
+.metric-card__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-card__value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-body);
+  line-height: 1.1;
+}
+
+.metric-card__label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---------- Tabs ---------- */
+.tabs-bar {
+  display: flex;
+  gap: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  width: fit-content;
+}
+
+.tabs-bar__item {
+  border: none;
+  background: transparent;
+  padding: 8px 20px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.tabs-bar__item--ativa {
+  background: var(--petrol-green);
+  color: #fff;
+}
+
+/* ---------- Chart ---------- */
+.chart-wrapper {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: 20px;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.chart-header .chart-title {
+  margin: 0;
+}
+
+.chart-title {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-body);
+}
+
+.chart-expand-btn {
+  border: 1px solid var(--card-border);
+  background: #fff;
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.chart-expand-btn:hover {
+  border-color: var(--petrol-green);
+  color: var(--petrol-green);
+}
+
+.chart-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 26, 22, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.chart-modal {
+  background: #fff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  width: min(1200px, 95vw);
+  height: 88vh;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.chart-modal__header .chart-title {
+  margin: 0;
+}
+
+.chart-modal__close {
+  border: 1px solid var(--card-border);
+  background: #fff;
+  color: var(--text-muted);
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.chart-modal__close:hover {
+  border-color: var(--late-text);
+  color: var(--late-text);
+}
+
+.chart-modal__body {
+  flex: 1;
+  min-height: 0;
+}
+
+.chart-tooltip {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft);
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.chart-tooltip strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.chart-tooltip__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-tooltip__swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.chart-tooltip__aviso {
+  color: var(--late-text);
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.chart-tooltip__total {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--card-border);
+  font-weight: 600;
+}
+
+.chart-caption {
+  margin: -8px 0 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.chart-caption--info {
+  font-style: normal;
+}
+
+/* ---------- Filters ---------- */
+.filters-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-soft);
+  flex-wrap: wrap;
+}
+
+.filters-bar__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filters-bar__field label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.filters-bar__field select {
+  min-width: 200px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: #fff;
+  color: var(--text-body);
+}
+
+.filters-bar__field--full {
+  flex-basis: 100%;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--card-border);
+  background: #fff;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--petrol-green);
+  color: var(--text-body);
+}
+
+.chip--todos {
+  margin-right: 4px;
+  border-style: dashed;
+}
+
+.chip--ativo,
+.chip--ativo:hover {
+  background: var(--petrol-green);
+  border-color: var(--petrol-green);
+  color: #fff;
+}
+
+.filters-bar__clear {
+  border: none;
+  background: transparent;
+  color: var(--petrol-green);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 4px;
+}
+
+.filters-bar__clear:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Error / empty state ---------- */
+.error-banner {
+  background: var(--late-bg);
+  color: var(--late-text);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-weight: 600;
+}
+
+.table-state {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* ---------- Table ---------- */
+.table-wrapper {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  overflow-x: auto;
+}
+
+.medidas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.medidas-table thead th {
+  text-align: left;
+  padding: 12px 14px;
+  background: var(--card-bg);
+  color: var(--text-body);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--card-border);
+  white-space: nowrap;
+}
+
+.medidas-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--card-border);
+  vertical-align: top;
+  color: var(--text-body);
+}
+
+.medidas-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cell-primary {
+  display: block;
+  font-weight: 600;
+}
+
+.cell-secondary {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.row--alert td {
+  background: rgba(251, 228, 228, 0.35);
+}
+
+.row--alert-note td {
+  background: var(--alert-bg);
+  color: var(--alert-text);
+  font-size: 13px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.alert-pill {
+  display: inline-block;
+  background: var(--alert-text);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+  padding: 2px 10px;
+  margin-right: 8px;
+}
+
+.sap-link {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--petrol-green);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sap-link:hover {
+  opacity: 0.9;
+}
+
+/* ---------- Badges ---------- */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge--late {
+  background: var(--late-bg);
+  color: var(--late-text);
+}
+
+.badge--soon {
+  background: var(--soon-bg);
+  color: var(--soon-text);
+}
+
+.badge--ontime {
+  background: var(--ontime-bg);
+  color: var(--ontime-text);
+}
+
+.badge--neutral {
+  background: var(--card-bg);
+  color: var(--text-muted);
+}
+
+/* Mesmos tons de azul/violeta usados no gráfico de barras (ABER/ANDM), aqui
+   como badges de TIPO_INCONSISTENCIA — cores diferentes das de prazo acima. */
+.badge--blue {
+  background: #e1ecfa;
+  color: #2a78d6;
+}
+
+.badge--violet {
+  background: #ece7f8;
+  color: #4a3aa7;
+}

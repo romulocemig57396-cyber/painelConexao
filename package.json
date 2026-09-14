@@ -1,0 +1,11 @@
+{
+  "name": "medidas-pendentes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Orquestra o build do client e o start do server (mesma porta, produção)",
+  "scripts": {
+    "build": "npm --prefix client install && npm --prefix client run build",
+    "start": "npm --prefix server start",
+    "prod": "npm run build && npm run start"
+  }
+}

@@ -1,0 +1,12 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Software\Classes\painelmedidas]
+@="URL:Painel de Medidas Protocol"
+"URL Protocol"=""
+
+[HKEY_CURRENT_USER\Software\Classes\painelmedidas\shell]
+
+[HKEY_CURRENT_USER\Software\Classes\painelmedidas\shell\open]
+
+[HKEY_CURRENT_USER\Software\Classes\painelmedidas\shell\open\command]
+@="\"C:\\Users\\c057396\\OneDrive - CEMIG\\NovosPython\\ConexaoMT\\iniciar-painel.bat\" \"%1\""

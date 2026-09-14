@@ -1,0 +1,58 @@
+:root {
+  --header-green: #1e5a4b;
+  --gradient-start: #8bc53f;
+  --gradient-end: #3d9b3d;
+  --petrol-green: #1e7a5f;
+  --card-bg: #f2f2f2;
+  --card-border: #e0e0e0;
+  --text-body: #1f3d33;
+  --text-muted: #5a6f68;
+
+  --late-bg: #fbe4e4;
+  --late-text: #9e2b2b;
+  --soon-bg: #fdefd8;
+  --soon-text: #8a5a0b;
+  --ontime-bg: #e3f1e6;
+  --ontime-text: #1e7a5f;
+  --alert-bg: #fbe4e4;
+  --alert-text: #9e2b2b;
+
+  --radius-md: 10px;
+  --radius-pill: 999px;
+  --shadow-soft: 0 1px 3px rgba(30, 90, 75, 0.08), 0 1px 2px rgba(30, 90, 75, 0.06);
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Open Sans', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #fafbfa;
+  color: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button,
+select,
+input {
+  font-family: inherit;
+}
+
+a {
+  color: var(--petrol-green);
+}
