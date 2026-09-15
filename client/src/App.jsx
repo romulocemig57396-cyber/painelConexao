@@ -39,6 +39,7 @@ const SERVICOS_HISTORICO = [
   'COMT', 'COBT', 'PSAA', 'PSER', 'PSAC', 'PSRP', 'PSAG', 'PSAI', 'PSAF', 'PSSG', 'PSIP', 'PSST',
 ];
 const MERCADOS_HISTORICO = ['URBANO', 'RURAL'];
+const SITUACOES_VENCIMENTO = ['PENDENTES', 'EM ATRASO', 'VENCE HOJE', 'VENCE 7 DIAS', 'NO PRAZO'];
 
 export default function App() {
   const [rows, setRows] = useState([]);
@@ -49,11 +50,12 @@ export default function App() {
   const [error, setError] = useState(null);
   const [areaFiltro, setAreaFiltro] = useState('');
   const [statusFiltro, setStatusFiltro] = useState('');
+  const [servicos, setServicos] = useState([]);
+  const [servicosSelecionados, setServicosSelecionados] = useState([]);
   const [medidasGrupo1, setMedidasGrupo1] = useState([]);
   const [medidasGrupo2, setMedidasGrupo2] = useState([]);
   const [medidasSelecionadas, setMedidasSelecionadas] = useState([]);
   const [medidasInicializado, setMedidasInicializado] = useState(false);
-  const [statusPendenteConfig, setStatusPendenteConfig] = useState([]);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
   const [abaAtiva, setAbaAtiva] = useState('lista');
   // Atalho de filtro disparado pelos cards de métrica: null (Total pendentes) | 'atraso' | 'grupo2'
@@ -98,6 +100,7 @@ export default function App() {
   function limparFiltros() {
     setAreaFiltro('');
     setStatusFiltro('');
+    setServicosSelecionados(servicos);
     setMedidasSelecionadas(medidasGrupo1);
     setCardFiltroAtivo(null);
   }
@@ -117,6 +120,9 @@ export default function App() {
       const params = new URLSearchParams();
       if (areaFiltro) params.set('area', areaFiltro);
       if (statusFiltro) params.set('status', statusFiltro);
+      if (servicosSelecionados.length !== servicos.length) {
+        params.set('servico', servicosSelecionados.join(','));
+      }
       // Só manda "medidas" quando o usuário desmarcou alguma opção — com tudo
       // marcado o comportamento é o mesmo de não filtrar (usa o grupo 1 padrão do backend).
       if (medidasInicializado && medidasSelecionadas.length !== medidasGrupo1.length) {
@@ -133,6 +139,9 @@ export default function App() {
       const paramsGrupo2 = new URLSearchParams();
       if (areaFiltro) paramsGrupo2.set('area', areaFiltro);
       if (statusFiltro) paramsGrupo2.set('status', statusFiltro);
+      if (servicosSelecionados.length !== servicos.length) {
+        paramsGrupo2.set('servico', servicosSelecionados.join(','));
+      }
       const qsGrupo2 = paramsGrupo2.toString();
 
       const [respMedidas, respResumo, respResumoGrupo2] = await Promise.all([
@@ -161,8 +170,9 @@ export default function App() {
       if (json.regrasNegocio?.grupo2Medidas?.length) {
         setMedidasGrupo2(json.regrasNegocio.grupo2Medidas);
       }
-      if (json.regrasNegocio?.statusPendente?.length) {
-        setStatusPendenteConfig(json.regrasNegocio.statusPendente);
+      if (json.regrasNegocio?.codServicoFiltro?.length) {
+        setServicos(json.regrasNegocio.codServicoFiltro);
+        if (!servicos.length) setServicosSelecionados(json.regrasNegocio.codServicoFiltro);
       }
 
       // Só repopula as opções dos dropdowns a partir do carregamento sem filtro
@@ -184,7 +194,7 @@ export default function App() {
   useEffect(() => {
     carregarDados();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [areaFiltro, statusFiltro, medidasSelecionadas, cardFiltroAtivo]);
+  }, [areaFiltro, statusFiltro, medidasSelecionadas, servicosSelecionados, cardFiltroAtivo]);
 
   useEffect(() => {
     // Data/hora de atualização do banco: temporário, buscado uma vez só (não
@@ -320,6 +330,9 @@ export default function App() {
             <Filters
               areas={filterOptions.areas}
               statusList={filterOptions.statusList}
+              servicos={servicos}
+              servicosSelecionados={servicosSelecionados}
+              onServicosChange={setServicosSelecionados}
               areaSelecionada={areaFiltro}
               statusSelecionado={statusFiltro}
               onAreaChange={setAreaFiltro}
@@ -341,17 +354,17 @@ export default function App() {
         {abaAtiva === 'graficos' && (
           <>
             <MedidasBarChart
-              titulo="Medidas pendentes por código e status"
+              titulo="Medidas pendentes por situação de vencimento"
               resumo={resumo}
               codigos={medidasSelecionadas.length ? medidasSelecionadas : medidasGrupo1}
-              statusList={statusPendenteConfig}
+              situacaoList={SITUACOES_VENCIMENTO}
               loading={loading}
             />
             <MedidasBarChart
-              titulo="Medidas pendentes — Áreas envolvidas"
+              titulo="Medidas pendentes por situação de vencimento — Áreas envolvidas"
               resumo={resumoGrupo2}
               codigos={medidasGrupo2}
-              statusList={statusPendenteConfig}
+              situacaoList={SITUACOES_VENCIMENTO}
               loading={loading}
             />
           </>

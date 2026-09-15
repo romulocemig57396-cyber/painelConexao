@@ -77,7 +77,8 @@ Detalhe de instalação/cliente (endereço, dados técnicos). Não é necessári
 
 ## 3. Regra de negócio e query final validada
 
-**Filtro principal**: medidas do "grupo 1" pendentes, em notas do tipo COMT.
+**Filtro principal**: medidas do "grupo 1" pendentes, em notas dos tipos de serviço
+configurados em `COD_SERVICO_FILTRO` (por padrão, os mesmos tipos disponíveis no Histórico).
 **Sinalização adicional**: se a mesma nota também tem alguma medida do "grupo 2" pendente, mostrar quais.
 
 ```sql
@@ -112,7 +113,10 @@ LEFT JOIN (
 WHERE 
     M.COD_MEDIDA IN ('0019','0020','0021','0032','0080','0086')
     AND M.COD_STAT_USU IN ('ABER','ANDM')
-    AND N.COD_SERVICO IN ('COMT')
+    AND N.COD_SERVICO IN (
+        'COMT','COBT','PSAA','PSER','PSAC','PSRP',
+        'PSAG','PSAI','PSAF','PSSG','PSIP','PSST'
+    )
 ORDER BY 
     N.NUM_NOTA, M.DAT_TPREV ASC;
 ```
@@ -122,7 +126,7 @@ ORDER BY
 - Uma mesma `NUM_NOTA` pode aparecer em múltiplas linhas (uma por medida do grupo 1) — comportamento esperado.
 - Grupo 1 (filtro principal): `0019, 0020, 0021, 0032, 0080, 0086`
 - Grupo 2 (sinalização): `0070, 0805, 0804, 0700, 0720`
-- Ambos os grupos e a lista de `COD_SERVICO` (hoje só `COMT`) devem ser **configuráveis**, não fixos no código — a equipe pode querer ajustar isso no futuro.
+- Ambos os grupos e a lista de `COD_SERVICO` devem ser **configuráveis**, não fixos no código — a equipe pode querer ajustar isso no futuro.
 
 ---
 

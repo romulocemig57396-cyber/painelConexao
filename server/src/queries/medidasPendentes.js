@@ -10,8 +10,14 @@ const { inClauseParams } = require('./sqlHelpers');
  * usado pelo filtro multi-select de COD_MEDIDA no frontend.
  */
 async function buscarMedidasPendentes(pool, filtros = {}) {
-  const { grupo1Medidas: grupo1Padrao, grupo2Medidas, statusPendente, codServicoFiltro } = config.regrasNegocio;
+  const {
+    grupo1Medidas: grupo1Padrao,
+    grupo2Medidas,
+    statusPendente,
+    codServicoFiltro: servicosPadrao,
+  } = config.regrasNegocio;
   const grupo1Medidas = filtros.medidas && filtros.medidas.length ? filtros.medidas : grupo1Padrao;
+  const codServicoFiltro = filtros.servico?.length ? filtros.servico : servicosPadrao;
 
   const request = pool.request();
 

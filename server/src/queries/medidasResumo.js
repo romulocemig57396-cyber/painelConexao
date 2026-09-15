@@ -5,13 +5,19 @@ const { inClauseParams } = require('./sqlHelpers');
 /**
  * Mesma regra de negócio de buscarMedidasPendentes (grupo1/status/COD_SERVICO,
  * com os mesmos filtros opcionais de area/status/medidas/situacao/grupo2), mas
- * agregada por COD_MEDIDA + COD_STAT_USU — usada pelo gráfico de barras da aba
+ * agregada por COD_MEDIDA + DES_SITUACAO — usada pelo gráfico de barras da aba
  * "Gráficos". O LEFT JOIN do grupo 2 só existe pra suportar o filtro "grupo2"
  * (atalho do card "Com pendência grupo 2"); a contagem em si não sinaliza grupo 2.
  */
 async function buscarResumoMedidas(pool, filtros = {}) {
-  const { grupo1Medidas: grupo1Padrao, grupo2Medidas, statusPendente, codServicoFiltro } = config.regrasNegocio;
+  const {
+    grupo1Medidas: grupo1Padrao,
+    grupo2Medidas,
+    statusPendente,
+    codServicoFiltro: servicosPadrao,
+  } = config.regrasNegocio;
   const grupo1Medidas = filtros.medidas && filtros.medidas.length ? filtros.medidas : grupo1Padrao;
+  const codServicoFiltro = filtros.servico?.length ? filtros.servico : servicosPadrao;
 
   const request = pool.request();
 
@@ -40,7 +46,10 @@ async function buscarResumoMedidas(pool, filtros = {}) {
   const query = `
     SELECT
         M.COD_MEDIDA,
-        M.COD_STAT_USU,
+        CASE
+            WHEN M.COD_MEDIDA = '0019' THEN 'PENDENTES'
+            ELSE M.DES_SITUACAO
+        END AS DES_SITUACAO,
         COUNT(*) AS QUANTIDADE
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
@@ -60,9 +69,13 @@ async function buscarResumoMedidas(pool, filtros = {}) {
         AND N.COD_SERVICO IN (${servicoInClause})
         ${extraWhere}
     GROUP BY
-        M.COD_MEDIDA, M.COD_STAT_USU
+        M.COD_MEDIDA,
+        CASE
+            WHEN M.COD_MEDIDA = '0019' THEN 'PENDENTES'
+            ELSE M.DES_SITUACAO
+        END
     ORDER BY
-        M.COD_MEDIDA, M.COD_STAT_USU;
+        M.COD_MEDIDA, DES_SITUACAO;
   `;
 
   const result = await request.query(query);

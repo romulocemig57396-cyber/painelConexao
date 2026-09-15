@@ -14,7 +14,13 @@ const { inClauseParams } = require('./sqlHelpers');
  * "medidas" aqui, já que os códigos do grupo 2 não são escolhidos pelo usuário).
  */
 async function buscarResumoGrupo2(pool, filtros = {}) {
-  const { grupo1Medidas, grupo2Medidas, statusPendente, codServicoFiltro } = config.regrasNegocio;
+  const {
+    grupo1Medidas,
+    grupo2Medidas,
+    statusPendente,
+    codServicoFiltro: servicosPadrao,
+  } = config.regrasNegocio;
+  const codServicoFiltro = filtros.servico?.length ? filtros.servico : servicosPadrao;
 
   const request = pool.request();
 
@@ -36,7 +42,7 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
   const query = `
     SELECT
         M.COD_MEDIDA,
-        M.COD_STAT_USU,
+        M.DES_SITUACAO,
         COUNT(*) AS QUANTIDADE
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
@@ -54,9 +60,9 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
         )
         ${extraWhere}
     GROUP BY
-        M.COD_MEDIDA, M.COD_STAT_USU
+        M.COD_MEDIDA, M.DES_SITUACAO
     ORDER BY
-        M.COD_MEDIDA, M.COD_STAT_USU;
+        M.COD_MEDIDA, M.DES_SITUACAO;
   `;
 
   const result = await request.query(query);

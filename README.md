@@ -1,6 +1,6 @@
 # Painel de Medidas Pendentes
 
-App para a equipe acompanhar medidas pendentes vinculadas a notas SAP (tipo `COMT`), lendo direto do SQL Server `DB_SGO`.
+App para a equipe acompanhar medidas pendentes vinculadas a notas SAP, lendo direto do SQL Server `DB_SGO`.
 
 - **Backend**: Node.js + Express + [`mssql`](https://www.npmjs.com/package/mssql) (`server/`)
 - **Frontend**: React + Vite, sem Streamlit/Python (`client/`)
@@ -24,9 +24,11 @@ DB_TRUST_CERT=true
 PORT=3001
 ```
 
-Os grupos de medidas, status considerados "pendente" e o(s) `COD_SERVICO` filtrado(s) também
+Os grupos de medidas, status considerados "pendente" e os `COD_SERVICO` filtrados também
 são configuráveis no `.env` (`GRUPO1_MEDIDAS`, `GRUPO2_MEDIDAS`, `STATUS_PENDENTE`,
-`COD_SERVICO_FILTRO`) — não é necessário mexer no código para ajustar essas listas.
+`COD_SERVICO_FILTRO`). Por padrão, o painel usa os mesmos tipos de serviço disponíveis
+na aba Histórico (`COMT`, `COBT`, `PSAA`, `PSER`, `PSAC`, `PSRP`, `PSAG`, `PSAI`,
+`PSAF`, `PSSG`, `PSIP` e `PSST`).
 
 Dependências já instaladas. Para rodar:
 

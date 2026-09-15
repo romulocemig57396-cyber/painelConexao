@@ -3,6 +3,9 @@ import ChipMultiFilter from './ChipMultiFilter.jsx';
 export default function Filters({
   areas,
   statusList,
+  servicos,
+  servicosSelecionados,
+  onServicosChange,
   areaSelecionada,
   statusSelecionado,
   onAreaChange,
@@ -16,6 +19,7 @@ export default function Filters({
   const temFiltroAtivo =
     areaSelecionada ||
     statusSelecionado ||
+    servicosSelecionados.length !== servicos.length ||
     medidasSelecionadas.length !== medidasGrupo1.length ||
     cardFiltroAtivo;
 
@@ -32,6 +36,13 @@ export default function Filters({
           ))}
         </select>
       </div>
+      <ChipMultiFilter
+        label="Serviço — clique isola, Ctrl/Cmd+clique combina"
+        opcoes={servicos}
+        selecionadas={servicosSelecionados}
+        onChange={onServicosChange}
+        wrapperClassName="filters-bar__field filters-bar__field--full"
+      />
       <div className="filters-bar__field">
         <label htmlFor="filtro-status">Status</label>
         <select id="filtro-status" value={statusSelecionado} onChange={(e) => onStatusChange(e.target.value)}>

@@ -25,7 +25,9 @@ const config = {
     grupo1Medidas: parseList(process.env.GRUPO1_MEDIDAS, ['0019', '0020', '0021', '0032', '0080', '0086']),
     grupo2Medidas: parseList(process.env.GRUPO2_MEDIDAS, ['0070', '0805', '0804', '0700', '0720']),
     statusPendente: parseList(process.env.STATUS_PENDENTE, ['ABER', 'ANDM']),
-    codServicoFiltro: parseList(process.env.COD_SERVICO_FILTRO, ['COMT']),
+    codServicoFiltro: parseList(process.env.COD_SERVICO_FILTRO, [
+      'COMT', 'COBT', 'PSAA', 'PSER', 'PSAC', 'PSRP', 'PSAG', 'PSAI', 'PSAF', 'PSSG', 'PSIP', 'PSST',
+    ]),
   },
   regrasHistorico: {
     codServicoFiltro: parseList(process.env.HIST_COD_SERVICO_FILTRO, ['COMT']),
