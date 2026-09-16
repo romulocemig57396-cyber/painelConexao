@@ -45,24 +45,25 @@ export default function App() {
   const [rows, setRows] = useState([]);
   const [resumo, setResumo] = useState([]);
   const [resumoGrupo2, setResumoGrupo2] = useState([]);
-  const [filterOptions, setFilterOptions] = useState({ areas: [], statusList: [] });
+  const [resumo0070Regional, setResumo0070Regional] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [areaFiltro, setAreaFiltro] = useState('');
-  const [statusFiltro, setStatusFiltro] = useState('');
   const [servicos, setServicos] = useState([]);
   const [servicosSelecionados, setServicosSelecionados] = useState([]);
+  const [regionais, setRegionais] = useState([]);
+  const [regionaisSelecionadas, setRegionaisSelecionadas] = useState([]);
+  const [historicoRegionaisSelecionadas, setHistoricoRegionaisSelecionadas] = useState([]);
   const [medidasGrupo1, setMedidasGrupo1] = useState([]);
   const [medidasGrupo2, setMedidasGrupo2] = useState([]);
   const [medidasSelecionadas, setMedidasSelecionadas] = useState([]);
   const [medidasInicializado, setMedidasInicializado] = useState(false);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
   const [abaAtiva, setAbaAtiva] = useState('lista');
-  // Atalho de filtro disparado pelos cards de métrica: null (Total pendentes) | 'atraso' | 'grupo2'
+  // Filtro de medida disparado pelos cards de métrica.
   const [cardFiltroAtivo, setCardFiltroAtivo] = useState(null);
 
   // Aba "Inconsistências": regra de negócio independente, sem relação com os
-  // filtros de área/status/medida/card acima — busca uma vez só, filtro local.
+  // filtros de status/medida/card acima — busca uma vez só, filtro local.
   const [inconsistencias, setInconsistencias] = useState([]);
   const [inconsistenciasLoading, setInconsistenciasLoading] = useState(true);
   const [inconsistenciasError, setInconsistenciasError] = useState(null);
@@ -98,19 +99,20 @@ export default function App() {
   const [produtividadeError, setProdutividadeError] = useState(null);
 
   function limparFiltros() {
-    setAreaFiltro('');
-    setStatusFiltro('');
     setServicosSelecionados(servicos);
+    setRegionaisSelecionadas(regionais);
     setMedidasSelecionadas(medidasGrupo1);
     setCardFiltroAtivo(null);
   }
 
-  function handleCardClick(filterKey) {
-    if (filterKey === 'total') {
-      limparFiltros();
+  function handleCardClick(filterKey, medidasDoCard) {
+    if (cardFiltroAtivo === filterKey) {
+      setCardFiltroAtivo(null);
+      setMedidasSelecionadas(medidasGrupo1);
       return;
     }
-    setCardFiltroAtivo((atual) => (atual === filterKey ? null : filterKey));
+    setCardFiltroAtivo(filterKey);
+    setMedidasSelecionadas(medidasDoCard);
   }
 
   async function carregarDados() {
@@ -118,10 +120,11 @@ export default function App() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (areaFiltro) params.set('area', areaFiltro);
-      if (statusFiltro) params.set('status', statusFiltro);
       if (servicosSelecionados.length !== servicos.length) {
         params.set('servico', servicosSelecionados.join(','));
+      }
+      if (regionaisSelecionadas.length !== regionais.length) {
+        params.set('regional', regionaisSelecionadas.join(','));
       }
       // Só manda "medidas" quando o usuário desmarcou alguma opção — com tudo
       // marcado o comportamento é o mesmo de não filtrar (usa o grupo 1 padrão do backend).
@@ -137,28 +140,33 @@ export default function App() {
       // atalhos de card não fazem sentido nele — os códigos já são fixos e a
       // ideia é agregar as medidas do grupo 2 em si, não notas do grupo 1).
       const paramsGrupo2 = new URLSearchParams();
-      if (areaFiltro) paramsGrupo2.set('area', areaFiltro);
-      if (statusFiltro) paramsGrupo2.set('status', statusFiltro);
       if (servicosSelecionados.length !== servicos.length) {
         paramsGrupo2.set('servico', servicosSelecionados.join(','));
       }
+      if (regionaisSelecionadas.length !== regionais.length) {
+        paramsGrupo2.set('regional', regionaisSelecionadas.join(','));
+      }
       const qsGrupo2 = paramsGrupo2.toString();
 
-      const [respMedidas, respResumo, respResumoGrupo2] = await Promise.all([
+      const [respMedidas, respResumo, respResumoGrupo2, respResumo0070] = await Promise.all([
         fetch(`/api/medidas?${qs}`),
         fetch(`/api/medidas/resumo?${qs}`),
         fetch(`/api/medidas/resumo-grupo2?${qsGrupo2}`),
+        fetch(`/api/medidas/resumo-0070-regional?${qsGrupo2}`),
       ]);
       if (!respMedidas.ok) throw new Error(`Falha na API (${respMedidas.status})`);
       if (!respResumo.ok) throw new Error(`Falha na API do resumo (${respResumo.status})`);
       if (!respResumoGrupo2.ok) throw new Error(`Falha na API do resumo grupo 2 (${respResumoGrupo2.status})`);
+      if (!respResumo0070.ok) throw new Error(`Falha na API da medida 0070 (${respResumo0070.status})`);
 
       const json = await respMedidas.json();
       const jsonResumo = await respResumo.json();
       const jsonResumoGrupo2 = await respResumoGrupo2.json();
+      const jsonResumo0070 = await respResumo0070.json();
       setRows(json.data);
       setResumo(jsonResumo.data);
       setResumoGrupo2(jsonResumoGrupo2.data);
+      setResumo0070Regional(jsonResumo0070.data);
 
       if (json.regrasNegocio?.grupo1Medidas?.length) {
         setMedidasGrupo1(json.regrasNegocio.grupo1Medidas);
@@ -171,19 +179,15 @@ export default function App() {
         setMedidasGrupo2(json.regrasNegocio.grupo2Medidas);
       }
       if (json.regrasNegocio?.codServicoFiltro?.length) {
-        setServicos(json.regrasNegocio.codServicoFiltro);
-        if (!servicos.length) setServicosSelecionados(json.regrasNegocio.codServicoFiltro);
+        const servicosDisponiveis = json.regrasNegocio.codServicoFiltro;
+        const servicosIniciais = servicosDisponiveis.filter((servico) => !['PSAA', 'PSAI'].includes(servico));
+        setServicos(servicosDisponiveis);
+        if (!servicos.length) setServicosSelecionados(servicosIniciais);
       }
 
       // Só repopula as opções dos dropdowns a partir do carregamento sem filtro
       // nenhum — senão, ao selecionar uma área, o próprio dropdown encolheria
       // para mostrar só as opções presentes no resultado já filtrado.
-      if (!areaFiltro && !statusFiltro) {
-        setFilterOptions({
-          areas: [...new Set(json.data.map((r) => r.COD_AREA_RESP).filter(Boolean))].sort(),
-          statusList: [...new Set(json.data.map((r) => r.COD_STAT_USU).filter(Boolean))].sort(),
-        });
-      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -194,7 +198,24 @@ export default function App() {
   useEffect(() => {
     carregarDados();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [areaFiltro, statusFiltro, medidasSelecionadas, servicosSelecionados, cardFiltroAtivo]);
+  }, [medidasSelecionadas, servicosSelecionados, regionaisSelecionadas, cardFiltroAtivo]);
+
+  useEffect(() => {
+    async function carregarOpcoes() {
+      try {
+        const resp = await fetch('/api/medidas/opcoes');
+        if (!resp.ok) throw new Error(`Falha ao carregar opções (${resp.status})`);
+        const json = await resp.json();
+        const regionaisDisponiveis = json.regionais || [];
+        setRegionais(regionaisDisponiveis);
+        setRegionaisSelecionadas(regionaisDisponiveis);
+        setHistoricoRegionaisSelecionadas(regionaisDisponiveis);
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+    carregarOpcoes();
+  }, []);
 
   useEffect(() => {
     // Data/hora de atualização do banco: temporário, buscado uma vez só (não
@@ -234,6 +255,7 @@ export default function App() {
         const params = new URLSearchParams();
         params.set('servico', historicoServico);
         if (historicoMercado) params.set('mercado', historicoMercado);
+        params.set('regional', historicoRegionaisSelecionadas.join(','));
         const qs = params.toString();
         const [respAprovacao, respLiberacao, respUniversalizacao] = await Promise.all([
           fetch(`/api/historico/aprovacao?${qs}`),
@@ -256,7 +278,7 @@ export default function App() {
       }
     }
     carregarHistorico();
-  }, [historicoServico, historicoMercado]);
+  }, [historicoServico, historicoMercado, historicoRegionaisSelecionadas]);
 
   useEffect(() => {
     async function carregarProdutividade() {
@@ -266,6 +288,7 @@ export default function App() {
         const params = new URLSearchParams();
         params.set('servico', historicoServico);
         if (historicoMercado) params.set('mercado', historicoMercado);
+        params.set('regional', historicoRegionaisSelecionadas.join(','));
         // Só manda "medidas" quando o usuário desmarcou alguma opção — com
         // tudo marcado o comportamento é o mesmo de não filtrar (backend usa
         // as 6 medidas padrão configuradas).
@@ -299,20 +322,49 @@ export default function App() {
     }
     carregarProdutividade();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [produtividadeMedidasSelecionadas, historicoServico, historicoMercado]);
+  }, [produtividadeMedidasSelecionadas, historicoServico, historicoMercado, historicoRegionaisSelecionadas]);
 
   const metrics = useMemo(() => {
-    const totalPendentes = rows.length;
-    const emAtraso = rows.filter((r) => (r.DES_SITUACAO || '').toUpperCase().includes('ATRASO')).length;
-    const areasEnvolvidas = new Set(
-      rows.filter((r) => r.TEM_PENDENCIA_GRUPO2 === 'SIM').map((r) => r.NUM_NOTA),
-    ).size;
-    return { totalPendentes, emAtraso, areasEnvolvidas };
+    const contarMedidas = (codigos) => rows.filter((row) => codigos.includes(row.COD_MEDIDA)).length;
+    return {
+      analiseInicial: contarMedidas(['0019']),
+      analiseConexao: contarMedidas(['0020', '0021']),
+      orcamento: contarMedidas(['0080']),
+      orcamentoEstimado: contarMedidas(['0032', '0086']),
+    };
   }, [rows]);
 
   const inconsistenciasFiltradas = useMemo(
     () => inconsistencias.filter((r) => tiposSelecionados.includes(r.TIPO_INCONSISTENCIA)),
     [inconsistencias, tiposSelecionados],
+  );
+
+  const renderFiltrosMedidas = () => (
+    <>
+      <Filters
+      servicos={servicos}
+      servicosSelecionados={servicosSelecionados}
+      onServicosChange={setServicosSelecionados}
+      regionais={regionais}
+      regionaisSelecionadas={regionaisSelecionadas}
+      onRegionaisChange={setRegionaisSelecionadas}
+      medidasGrupo1={medidasGrupo1}
+      medidasSelecionadas={medidasSelecionadas}
+      onMedidasChange={setMedidasSelecionadas}
+      cardFiltroAtivo={cardFiltroAtivo}
+      onLimpar={limparFiltros}
+      />
+      <div className="filters-help">Clique isola; Ctrl/Cmd+clique combina</div>
+    </>
+  );
+
+  const renderCardsMedidas = () => (
+    <MetricCards
+      metrics={metrics}
+      loading={loading}
+      cardFiltroAtivo={cardFiltroAtivo}
+      onCardClick={handleCardClick}
+    />
   );
 
   return (
@@ -321,28 +373,8 @@ export default function App() {
       <main className="app-main">
         {(abaAtiva === 'lista' || abaAtiva === 'graficos') && (
           <>
-            <MetricCards
-              metrics={metrics}
-              loading={loading}
-              cardFiltroAtivo={cardFiltroAtivo}
-              onCardClick={handleCardClick}
-            />
-            <Filters
-              areas={filterOptions.areas}
-              statusList={filterOptions.statusList}
-              servicos={servicos}
-              servicosSelecionados={servicosSelecionados}
-              onServicosChange={setServicosSelecionados}
-              areaSelecionada={areaFiltro}
-              statusSelecionado={statusFiltro}
-              onAreaChange={setAreaFiltro}
-              onStatusChange={setStatusFiltro}
-              medidasGrupo1={medidasGrupo1}
-              medidasSelecionadas={medidasSelecionadas}
-              onMedidasChange={setMedidasSelecionadas}
-              cardFiltroAtivo={cardFiltroAtivo}
-              onLimpar={limparFiltros}
-            />
+            {(abaAtiva === 'lista' || abaAtiva === 'graficos') && renderCardsMedidas()}
+            {renderFiltrosMedidas()}
             {error && <div className="error-banner">Erro ao carregar dados: {error}</div>}
           </>
         )}
@@ -359,6 +391,19 @@ export default function App() {
               codigos={medidasSelecionadas.length ? medidasSelecionadas : medidasGrupo1}
               situacaoList={SITUACOES_VENCIMENTO}
               loading={loading}
+              controlesFullscreen={renderFiltrosMedidas()}
+              cardsFullscreen={renderCardsMedidas()}
+            />
+            <MedidasBarChart
+              titulo="Medida 0070 por Regional"
+              resumo={resumo0070Regional}
+              codigos={[]}
+              categorias={regionaisSelecionadas.length ? regionaisSelecionadas : regionais}
+              campoCategoria="REGIONAL"
+              situacaoList={SITUACOES_VENCIMENTO}
+              loading={loading}
+              controlesFullscreen={renderFiltrosMedidas()}
+              cardsFullscreen={renderCardsMedidas()}
             />
             <MedidasBarChart
               titulo="Medidas pendentes por situação de vencimento — Áreas envolvidas"
@@ -366,6 +411,8 @@ export default function App() {
               codigos={medidasGrupo2}
               situacaoList={SITUACOES_VENCIMENTO}
               loading={loading}
+              controlesFullscreen={renderFiltrosMedidas()}
+              cardsFullscreen={renderCardsMedidas()}
             />
           </>
         )}
@@ -374,7 +421,7 @@ export default function App() {
           <>
             <section className="filters-bar">
               <ChipMultiFilter
-                label="Tipo de inconsistência — clique isola, Ctrl/Cmd+clique combina"
+                label="Tipo de inconsistência"
                 opcoes={tiposInconsistencia}
                 selecionadas={tiposSelecionados}
                 onChange={setTiposSelecionados}
@@ -392,10 +439,17 @@ export default function App() {
           <>
             <section className="filters-bar">
               <ChipMultiFilter
-                label="Serviço — clique isola, Ctrl/Cmd+clique combina"
+                label="Serviço"
                 opcoes={SERVICOS_HISTORICO}
                 selecionadas={historicoServicoSelecionado}
                 onChange={setHistoricoServicoSelecionado}
+                wrapperClassName="filters-bar__field filters-bar__field--full"
+              />
+              <ChipMultiFilter
+                label="Regional"
+                opcoes={regionais}
+                selecionadas={historicoRegionaisSelecionadas}
+                onChange={setHistoricoRegionaisSelecionadas}
                 wrapperClassName="filters-bar__field filters-bar__field--full"
               />
               <ChipMultiFilter
@@ -430,7 +484,7 @@ export default function App() {
             />
             <section className="filters-bar">
               <ChipMultiFilter
-                label="Produtividade — filtrar por medida — clique isola, Ctrl/Cmd+clique combina"
+                label="Produtividade — filtrar por medida"
                 opcoes={produtividadeMedidasDisponiveis}
                 selecionadas={produtividadeMedidasSelecionadas}
                 onChange={setProdutividadeMedidasSelecionadas}

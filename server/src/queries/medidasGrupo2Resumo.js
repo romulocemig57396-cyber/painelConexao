@@ -21,6 +21,7 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
     codServicoFiltro: servicosPadrao,
   } = config.regrasNegocio;
   const codServicoFiltro = filtros.servico?.length ? filtros.servico : servicosPadrao;
+  const regionais = filtros.regional?.length ? filtros.regional : null;
 
   const request = pool.request();
 
@@ -28,6 +29,7 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
   const grupo2InClause = inClauseParams(request, 'g2_', grupo2Medidas);
   const statusInClause = inClauseParams(request, 'st_', statusPendente);
   const servicoInClause = inClauseParams(request, 'sv_', codServicoFiltro);
+  const regionalInClause = regionais ? inClauseParams(request, 'rg_', regionais) : null;
 
   let extraWhere = '';
   if (filtros.area) {
@@ -38,6 +40,9 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
     request.input('filtroStatus', sql.NVarChar, filtros.status);
     extraWhere += ' AND M.COD_STAT_USU = @filtroStatus';
   }
+  if (regionalInClause) {
+    extraWhere += ` AND L.COD_SP IN (${regionalInClause})`;
+  }
 
   const query = `
     SELECT
@@ -47,6 +52,8 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
         ON M.NUM_NOTA = N.NUM_NOTA
+    LEFT JOIN TBL_LOCAIS L
+        ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
     WHERE
         M.COD_MEDIDA IN (${grupo2InClause})
         AND M.COD_STAT_USU IN (${statusInClause})

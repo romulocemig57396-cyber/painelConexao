@@ -1,15 +1,12 @@
 import ChipMultiFilter from './ChipMultiFilter.jsx';
 
 export default function Filters({
-  areas,
-  statusList,
   servicos,
   servicosSelecionados,
   onServicosChange,
-  areaSelecionada,
-  statusSelecionado,
-  onAreaChange,
-  onStatusChange,
+  regionais,
+  regionaisSelecionadas,
+  onRegionaisChange,
   medidasGrupo1,
   medidasSelecionadas,
   onMedidasChange,
@@ -17,45 +14,29 @@ export default function Filters({
   onLimpar,
 }) {
   const temFiltroAtivo =
-    areaSelecionada ||
-    statusSelecionado ||
     servicosSelecionados.length !== servicos.length ||
+    regionaisSelecionadas.length !== regionais.length ||
     medidasSelecionadas.length !== medidasGrupo1.length ||
     cardFiltroAtivo;
 
   return (
     <section className="filters-bar">
-      <div className="filters-bar__field">
-        <label htmlFor="filtro-area">Área responsável</label>
-        <select id="filtro-area" value={areaSelecionada} onChange={(e) => onAreaChange(e.target.value)}>
-          <option value="">Todas</option>
-          {areas.map((area) => (
-            <option key={area} value={area}>
-              {area}
-            </option>
-          ))}
-        </select>
-      </div>
       <ChipMultiFilter
-        label="Serviço — clique isola, Ctrl/Cmd+clique combina"
+        label="Regional"
+        opcoes={regionais}
+        selecionadas={regionaisSelecionadas}
+        onChange={onRegionaisChange}
+        wrapperClassName="filters-bar__field filters-bar__field--full"
+      />
+      <ChipMultiFilter
+        label="Serviço"
         opcoes={servicos}
         selecionadas={servicosSelecionados}
         onChange={onServicosChange}
         wrapperClassName="filters-bar__field filters-bar__field--full"
       />
-      <div className="filters-bar__field">
-        <label htmlFor="filtro-status">Status</label>
-        <select id="filtro-status" value={statusSelecionado} onChange={(e) => onStatusChange(e.target.value)}>
-          <option value="">Todos</option>
-          {statusList.map((status) => (
-            <option key={status} value={status}>
-              {status}
-            </option>
-          ))}
-        </select>
-      </div>
       <ChipMultiFilter
-        label="Medidas (grupo 1) — clique isola, Ctrl/Cmd+clique combina"
+        label="Medidas (grupo 1)"
         opcoes={medidasGrupo1}
         selecionadas={medidasSelecionadas}
         onChange={onMedidasChange}

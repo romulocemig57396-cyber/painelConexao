@@ -1,14 +1,29 @@
 const CARD_DEFS = [
-  { key: 'totalPendentes', label: 'Total pendentes', icon: '1', filterKey: 'total' },
-  { key: 'emAtraso', label: 'Em atraso', icon: '2', variant: 'late', filterKey: 'atraso' },
-  { key: 'areasEnvolvidas', label: 'Áreas envolvidas', icon: '3', variant: 'alert', filterKey: 'grupo2' },
+  { key: 'analiseInicial', label: 'Análise Inicial', icon: '1', filterKey: 'analiseInicial', medidas: ['0019'] },
+  {
+    key: 'analiseConexao',
+    label: 'Análise de Conexão',
+    icon: '2',
+    variant: 'late',
+    filterKey: 'analiseConexao',
+    medidas: ['0020', '0021'],
+  },
+  { key: 'orcamento', label: 'Orçamento', icon: '3', filterKey: 'orcamento', medidas: ['0080'] },
+  {
+    key: 'orcamentoEstimado',
+    label: 'Orçamento Estimado',
+    icon: '4',
+    variant: 'alert',
+    filterKey: 'orcamentoEstimado',
+    medidas: ['0032', '0086'],
+  },
 ];
 
 export default function MetricCards({ metrics, loading, cardFiltroAtivo, onCardClick }) {
   return (
     <section className="metric-cards">
       {CARD_DEFS.map((def) => {
-        const ativo = def.filterKey === 'total' ? !cardFiltroAtivo : cardFiltroAtivo === def.filterKey;
+        const ativo = cardFiltroAtivo === def.filterKey;
         const classes = [
           'metric-card',
           'metric-card--clicavel',
@@ -19,7 +34,12 @@ export default function MetricCards({ metrics, loading, cardFiltroAtivo, onCardC
           .join(' ');
 
         return (
-          <button key={def.key} type="button" className={classes} onClick={() => onCardClick(def.filterKey)}>
+          <button
+            key={def.key}
+            type="button"
+            className={classes}
+            onClick={() => onCardClick(def.filterKey, def.medidas)}
+          >
             <div className="metric-card__icon">{def.icon}</div>
             <div className="metric-card__body">
               <span className="metric-card__value">{loading ? '—' : metrics[def.key]}</span>

@@ -39,6 +39,7 @@ const config = {
       'COMT', 'COBT', 'PSAA', 'PSER', 'PSAC', 'PSRP', 'PSAG', 'PSAI', 'PSAF', 'PSSG', 'PSIP', 'PSST',
     ]),
     mercadosDisponiveis: parseList(process.env.HIST_MERCADOS_DISPONIVEIS, ['URBANO', 'RURAL']),
+    regionaisDisponiveis: parseList(process.env.HIST_REGIONAIS_DISPONIVEIS, ['CE', 'LE', 'MQ', 'NE', 'OE', 'SL', 'TR']),
     dataMinima: process.env.HIST_DATA_MINIMA || '2025-01-01',
     // Gráfico 1 (aprovação): medida verificada e os 3 status mutuamente exclusivos
     // (checados por palavra inteira dentro de COD_STAT_USU, nunca por igualdade).

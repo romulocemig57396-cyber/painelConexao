@@ -15,10 +15,11 @@ const router = express.Router();
 // múltiplos códigos no mesmo gráfico; mercado continua único (só 2 valores
 // possíveis, "ambos" já é só omitir o filtro).
 function lerFiltrosComuns(req) {
-  const { servico, mercado } = req.query;
+  const { servico, mercado, regional } = req.query;
   return {
     servico: validarListaEnum(servico, config.regrasHistorico.servicosDisponiveis, 'servico'),
     mercado: validarEnum(mercado, config.regrasHistorico.mercadosDisponiveis, 'mercado'),
+    regional: validarListaEnum(regional, config.regrasHistorico.regionaisDisponiveis, 'regional'),
   };
 }
 
@@ -30,10 +31,14 @@ function servicoVazio(filtros) {
   return filtros.servico !== undefined && filtros.servico.length === 0;
 }
 
+function regionalVazia(filtros) {
+  return filtros.regional !== undefined && filtros.regional.length === 0;
+}
+
 router.get('/historico/aprovacao', async (req, res) => {
   try {
     const filtros = lerFiltrosComuns(req);
-    if (servicoVazio(filtros)) return res.json({ regrasNegocio: config.regrasHistorico, data: [] });
+    if (servicoVazio(filtros) || regionalVazia(filtros)) return res.json({ regrasNegocio: config.regrasHistorico, data: [] });
     const pool = await getPool();
     const data = await buscarHistoricoAprovacao(pool, filtros);
     res.json({ regrasNegocio: config.regrasHistorico, data });
@@ -47,7 +52,7 @@ router.get('/historico/aprovacao', async (req, res) => {
 router.get('/historico/liberacao', async (req, res) => {
   try {
     const filtros = lerFiltrosComuns(req);
-    if (servicoVazio(filtros)) return res.json({ regrasNegocio: config.regrasHistorico, data: [] });
+    if (servicoVazio(filtros) || regionalVazia(filtros)) return res.json({ regrasNegocio: config.regrasHistorico, data: [] });
     const pool = await getPool();
     const data = await buscarHistoricoLiberacao(pool, filtros);
     res.json({ regrasNegocio: config.regrasHistorico, data });
@@ -61,7 +66,7 @@ router.get('/historico/liberacao', async (req, res) => {
 router.get('/historico/universalizacao', async (req, res) => {
   try {
     const filtros = lerFiltrosComuns(req);
-    if (servicoVazio(filtros)) return res.json({ regrasNegocio: config.regrasHistorico, data: [] });
+    if (servicoVazio(filtros) || regionalVazia(filtros)) return res.json({ regrasNegocio: config.regrasHistorico, data: [] });
     const pool = await getPool();
     const data = await buscarHistoricoUniversalizacao(pool, filtros);
     res.json({ regrasNegocio: config.regrasHistorico, data });
@@ -76,7 +81,7 @@ router.get('/historico/produtividade', async (req, res) => {
   try {
     const filtros = lerFiltrosComuns(req);
     const medidasFiltro = parseListaFiltro(req.query.medidas);
-    if (servicoVazio(filtros) || (medidasFiltro && medidasFiltro.length === 0)) {
+    if (servicoVazio(filtros) || regionalVazia(filtros) || (medidasFiltro && medidasFiltro.length === 0)) {
       return res.json({ regrasNegocio: config.regrasHistorico, data: [] });
     }
 

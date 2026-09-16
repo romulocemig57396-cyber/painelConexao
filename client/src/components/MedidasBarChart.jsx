@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 // Paleta validada (dataviz skill, palette.md): slot 1 azul / slot 7 violeta —
@@ -11,11 +12,11 @@ const SITUACAO_META = {
 };
 const COR_FALLBACK = '#898781';
 
-function montarDadosGrafico(resumo, codigos, situacaoList) {
-  return codigos.map((codMedida) => {
-    const linha = { codMedida };
+function montarDadosGrafico(resumo, categorias, situacaoList, campoCategoria) {
+  return categorias.map((categoria) => {
+    const linha = { categoria };
     situacaoList.forEach((situacao) => {
-      const encontrado = resumo.find((r) => r.COD_MEDIDA === codMedida && r.DES_SITUACAO === situacao);
+      const encontrado = resumo.find((r) => r[campoCategoria] === categoria && r.DES_SITUACAO === situacao);
       linha[situacao] = encontrado ? encontrado.QUANTIDADE : 0;
     });
     return linha;
@@ -37,15 +38,27 @@ function TooltipPersonalizado({ active, payload, label }) {
   );
 }
 
-export default function MedidasBarChart({ titulo, resumo, codigos, situacaoList, loading }) {
+export default function MedidasBarChart({
+  titulo,
+  resumo,
+  codigos,
+  situacaoList,
+  loading,
+  categorias = codigos,
+  campoCategoria = 'COD_MEDIDA',
+  controlesFullscreen,
+  cardsFullscreen,
+}) {
+  const [fullscreen, setFullscreen] = useState(false);
+
   if (loading) {
     return <div className="table-state">Carregando gráfico…</div>;
   }
-  if (!codigos.length || !situacaoList.length) {
+  if (!categorias.length || !situacaoList.length) {
     return <div className="table-state">Nenhum dado para os filtros atuais.</div>;
   }
 
-  const dados = montarDadosGrafico(resumo, codigos, situacaoList);
+  const dados = montarDadosGrafico(resumo, categorias, situacaoList, campoCategoria);
   const totalGeral = dados.reduce(
     (soma, linha) => soma + situacaoList.reduce((s, situacao) => s + linha[situacao], 0),
     0,
@@ -55,14 +68,12 @@ export default function MedidasBarChart({ titulo, resumo, codigos, situacaoList,
     return <div className="table-state">Nenhuma medida pendente encontrada para os filtros atuais.</div>;
   }
 
-  return (
-    <section className="chart-wrapper">
-      <h2 className="chart-title">{titulo}</h2>
-      <ResponsiveContainer width="100%" height={360}>
+  const grafico = (
+    <ResponsiveContainer width="100%" height="100%">
         <BarChart data={dados} barSize={24} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
           <CartesianGrid vertical={false} stroke="var(--card-border)" />
           <XAxis
-            dataKey="codMedida"
+            dataKey="categoria"
             tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
             axisLine={{ stroke: 'var(--card-border)' }}
             tickLine={false}
@@ -72,7 +83,7 @@ export default function MedidasBarChart({ titulo, resumo, codigos, situacaoList,
             tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
             axisLine={false}
             tickLine={false}
-            width={32}
+            width={56}
           />
           <Tooltip content={<TooltipPersonalizado />} cursor={{ fill: 'rgba(30, 90, 75, 0.06)' }} />
           <Legend
@@ -93,6 +104,43 @@ export default function MedidasBarChart({ titulo, resumo, codigos, situacaoList,
           ))}
         </BarChart>
       </ResponsiveContainer>
+  );
+
+  const conteudo = (
+    <>
+      <div className={fullscreen ? 'chart-modal__header' : 'chart-header'}>
+        <h2 className="chart-title">{titulo}</h2>
+        <button
+          type="button"
+          className={fullscreen ? 'chart-modal__close' : 'chart-expand-btn'}
+          onClick={() => setFullscreen(!fullscreen)}
+          aria-label={fullscreen ? 'Fechar tela cheia' : 'Visualizar gráfico em tela cheia'}
+          title={fullscreen ? 'Fechar tela cheia' : 'Visualizar em tela cheia'}
+        >
+          {fullscreen ? '×' : '⛶'}
+        </button>
+      </div>
+      {fullscreen && controlesFullscreen && (
+        <>
+          <div className="chart-modal__cards">{cardsFullscreen}</div>
+          <div className="chart-modal__filters">{controlesFullscreen}</div>
+        </>
+      )}
+      <div className={fullscreen ? 'chart-modal__body' : 'chart-wrapper__body'}>{grafico}</div>
+    </>
+  );
+
+  if (fullscreen) {
+    return (
+      <div className="chart-modal-overlay" role="dialog" aria-modal="true" aria-label={titulo}>
+        <section className="chart-modal">{conteudo}</section>
+      </div>
+    );
+  }
+
+  return (
+    <section className="chart-wrapper">
+      {conteudo}
     </section>
   );
 }

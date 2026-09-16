@@ -165,6 +165,10 @@ button.metric-card {
   padding: 20px;
 }
 
+.chart-wrapper__body {
+  height: 360px;
+}
+
 .chart-header {
   display: flex;
   align-items: center;
@@ -259,6 +263,80 @@ button.metric-card {
 .chart-modal__body {
   flex: 1;
   min-height: 0;
+}
+
+.chart-modal__filters {
+  max-height: 150px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.chart-modal__cards .metric-cards {
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chart-modal__cards .metric-card {
+  min-width: 0;
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+.chart-modal__cards .metric-card--ativo {
+  padding: 7px 9px;
+}
+
+.chart-modal__cards .metric-card__icon {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  font-size: 12px;
+}
+
+.chart-modal__cards .metric-card__value {
+  font-size: 18px;
+}
+
+.chart-modal__cards .metric-card__label {
+  font-size: 11px;
+}
+
+.chart-modal__filters .filters-bar {
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 10px;
+  box-shadow: none;
+}
+
+.chart-modal__filters .filters-bar__field--full {
+  flex-basis: auto;
+  flex: 1 1 260px;
+}
+
+.chart-modal__filters .filters-bar__field label {
+  font-size: 11px;
+}
+
+.chart-modal__filters .chip-list {
+  gap: 4px;
+}
+
+.chart-modal__filters .chip {
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+.chart-modal__filters .filters-bar__clear {
+  font-size: 12px;
+  padding: 4px;
+}
+
+.filters-help {
+  width: 100%;
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: -4px;
 }
 
 .chart-tooltip {

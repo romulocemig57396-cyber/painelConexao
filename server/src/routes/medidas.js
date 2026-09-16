@@ -3,18 +3,53 @@ const { getPool } = require('../db');
 const { buscarMedidasPendentes } = require('../queries/medidasPendentes');
 const { buscarResumoMedidas } = require('../queries/medidasResumo');
 const { buscarResumoGrupo2 } = require('../queries/medidasGrupo2Resumo');
+const { buscarOpcoesMedidas } = require('../queries/medidasOpcoes');
+const { buscarResumoMedida0070Regional } = require('../queries/medida0070RegionalResumo');
 const { montarUrlSap } = require('../sapUrl');
 const config = require('../config');
 const { parseListaFiltro } = require('./queryHelpers');
 
 const router = express.Router();
 
+router.get('/medidas/opcoes', async (_req, res) => {
+  try {
+    const pool = await getPool();
+    const opcoes = await buscarOpcoesMedidas(pool);
+    res.json(opcoes);
+  } catch (err) {
+    console.error('Erro ao buscar opções de medidas:', err);
+    res.status(500).json({ error: 'Falha ao consultar opções do banco de dados', detail: err.message });
+  }
+});
+
+router.get('/medidas/resumo-0070-regional', async (req, res) => {
+  try {
+    const { servico, regional } = req.query;
+    const servicoFiltro = parseListaFiltro(servico);
+    const regionalFiltro = parseListaFiltro(regional);
+    if ((servicoFiltro && servicoFiltro.length === 0) || (regionalFiltro && regionalFiltro.length === 0)) {
+      return res.json({ data: [] });
+    }
+    const pool = await getPool();
+    const data = await buscarResumoMedida0070Regional(pool, {
+      servico: servicoFiltro,
+      regional: regionalFiltro,
+    });
+    res.json({ data });
+  } catch (err) {
+    console.error('Erro ao buscar resumo da medida 0070 por regional:', err);
+    res.status(500).json({ error: 'Falha ao consultar o banco de dados', detail: err.message });
+  }
+});
+
 router.get('/medidas', async (req, res) => {
   try {
-    const { area, status, medidas, servico, situacao, grupo2 } = req.query;
+    const { area, status, medidas, servico, regional, situacao, grupo2 } = req.query;
     const medidasFiltro = parseListaFiltro(medidas);
     const servicoFiltro = parseListaFiltro(servico);
-    if ((medidasFiltro && medidasFiltro.length === 0) || (servicoFiltro && servicoFiltro.length === 0)) {
+    const regionalFiltro = parseListaFiltro(regional);
+    if ((medidasFiltro && medidasFiltro.length === 0) || (servicoFiltro && servicoFiltro.length === 0)
+      || (regionalFiltro && regionalFiltro.length === 0)) {
       return res.json({ total: 0, regrasNegocio: config.regrasNegocio, data: [] });
     }
 
@@ -24,6 +59,7 @@ router.get('/medidas', async (req, res) => {
       status,
       medidas: medidasFiltro,
       servico: servicoFiltro,
+      regional: regionalFiltro,
       situacao,
       grupo2: grupo2 === 'SIM',
     });
@@ -48,10 +84,12 @@ router.get('/medidas', async (req, res) => {
 // mesmos filtros (area/status/medidas) de /medidas — usada pelo gráfico de barras.
 router.get('/medidas/resumo', async (req, res) => {
   try {
-    const { area, status, medidas, servico, situacao, grupo2 } = req.query;
+    const { area, status, medidas, servico, regional, situacao, grupo2 } = req.query;
     const medidasFiltro = parseListaFiltro(medidas);
     const servicoFiltro = parseListaFiltro(servico);
-    if ((medidasFiltro && medidasFiltro.length === 0) || (servicoFiltro && servicoFiltro.length === 0)) {
+    const regionalFiltro = parseListaFiltro(regional);
+    if ((medidasFiltro && medidasFiltro.length === 0) || (servicoFiltro && servicoFiltro.length === 0)
+      || (regionalFiltro && regionalFiltro.length === 0)) {
       return res.json({ regrasNegocio: config.regrasNegocio, data: [] });
     }
 
@@ -61,6 +99,7 @@ router.get('/medidas/resumo', async (req, res) => {
       status,
       medidas: medidasFiltro,
       servico: servicoFiltro,
+      regional: regionalFiltro,
       situacao,
       grupo2: grupo2 === 'SIM',
     });
@@ -76,13 +115,16 @@ router.get('/medidas/resumo', async (req, res) => {
 // pelo segundo gráfico da aba "Gráficos" ("Medidas pendentes — Áreas envolvidas").
 router.get('/medidas/resumo-grupo2', async (req, res) => {
   try {
-    const { area, status, servico } = req.query;
+    const { area, status, servico, regional } = req.query;
     const servicoFiltro = parseListaFiltro(servico);
-    if (servicoFiltro && servicoFiltro.length === 0) {
+    const regionalFiltro = parseListaFiltro(regional);
+    if ((servicoFiltro && servicoFiltro.length === 0) || (regionalFiltro && regionalFiltro.length === 0)) {
       return res.json({ regrasNegocio: config.regrasNegocio, data: [] });
     }
     const pool = await getPool();
-    const resumo = await buscarResumoGrupo2(pool, { area, status, servico: servicoFiltro });
+    const resumo = await buscarResumoGrupo2(pool, {
+      area, status, servico: servicoFiltro, regional: regionalFiltro,
+    });
     res.json({ regrasNegocio: config.regrasNegocio, data: resumo });
   } catch (err) {
     console.error('Erro ao buscar resumo do grupo 2:', err);

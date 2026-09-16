@@ -18,6 +18,7 @@ async function buscarResumoMedidas(pool, filtros = {}) {
   } = config.regrasNegocio;
   const grupo1Medidas = filtros.medidas && filtros.medidas.length ? filtros.medidas : grupo1Padrao;
   const codServicoFiltro = filtros.servico?.length ? filtros.servico : servicosPadrao;
+  const regionais = filtros.regional?.length ? filtros.regional : null;
 
   const request = pool.request();
 
@@ -25,6 +26,7 @@ async function buscarResumoMedidas(pool, filtros = {}) {
   const grupo2InClause = inClauseParams(request, 'g2_', grupo2Medidas);
   const statusInClause = inClauseParams(request, 'st_', statusPendente);
   const servicoInClause = inClauseParams(request, 'sv_', codServicoFiltro);
+  const regionalInClause = regionais ? inClauseParams(request, 'rg_', regionais) : null;
 
   let extraWhere = '';
   if (filtros.area) {
@@ -42,6 +44,9 @@ async function buscarResumoMedidas(pool, filtros = {}) {
   if (filtros.grupo2) {
     extraWhere += ' AND P.MEDIDAS_PENDENTES IS NOT NULL';
   }
+  if (regionalInClause) {
+    extraWhere += ` AND L.COD_SP IN (${regionalInClause})`;
+  }
 
   const query = `
     SELECT
@@ -54,6 +59,8 @@ async function buscarResumoMedidas(pool, filtros = {}) {
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
         ON M.NUM_NOTA = N.NUM_NOTA
+    LEFT JOIN TBL_LOCAIS L
+        ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
     LEFT JOIN (
         SELECT
             M2.NUM_NOTA,

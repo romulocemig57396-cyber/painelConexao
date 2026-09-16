@@ -37,7 +37,8 @@ npm run dev
 ```
 
 A API sobe em `http://localhost:3001`. Endpoint principal: `GET /api/medidas`
-(aceita `?area=` e `?status=` opcionais).
+(aceita `?servico=` e `?regional=` opcionais). As opções de Regional são carregadas
+por `GET /api/medidas/opcoes`, a partir de `TBL_LOCAIS.COD_SP`.
 
 ## 2. Rodar o frontend
 

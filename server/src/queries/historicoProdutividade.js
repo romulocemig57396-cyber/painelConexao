@@ -27,6 +27,7 @@ async function buscarHistoricoProdutividade(pool, filtros = {}) {
   const { medidas: medidasPadrao, topN } = produtividade;
   const medidas = filtros.medidas && filtros.medidas.length ? filtros.medidas : medidasPadrao;
   const servicos = filtros.servico?.length ? filtros.servico : codServicoFiltro;
+  const regionais = filtros.regional?.length ? filtros.regional : null;
 
   const request = pool.request();
   request.input('dataMinima', sql.Date, new Date(dataMinima));
@@ -44,9 +45,11 @@ async function buscarHistoricoProdutividade(pool, filtros = {}) {
         OR (N.COD_SERVICO = 'PSAI' AND M.COD_MEDIDA IN (${medidasPsaiInClause}))
     )`;
   const servicoInClause = inClauseParams(request, 'sv_', servicos);
+  const regionalInClause = regionais ? inClauseParams(request, 'rg_', regionais) : null;
   const condMercado = filtros.mercado
     ? campoIgual('N.DES_MERCADO', request, 'mercado', filtros.mercado)
     : '1=1';
+  const condRegional = regionalInClause ? `AND L.COD_SP IN (${regionalInClause})` : '';
 
   const query = `
     WITH Contagem AS (
@@ -56,10 +59,12 @@ async function buscarHistoricoProdutividade(pool, filtros = {}) {
             COUNT(*) AS QTD_CONCLUIDAS
         FROM TBL_MEDIDAS M
         INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
+        INNER JOIN TBL_LOCAIS L ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
         WHERE ${condMedidaPorServico}
           AND N.COD_SERVICO IN (${servicoInClause})
           AND M.DAT_TREAL >= @dataMinima
           AND ${condMercado}
+          ${condRegional}
         GROUP BY FORMAT(M.DAT_TREAL, 'yyyy-MM'), M.COD_RESP_CONC
     ),
     Ranking AS (

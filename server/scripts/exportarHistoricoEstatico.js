@@ -1,9 +1,11 @@
 const path = require('path');
 const fs = require('fs');
 const { getPool } = require('../src/db');
+const config = require('../src/config');
 const { buscarHistoricoAprovacao } = require('../src/queries/historicoAprovacao');
 const { buscarHistoricoLiberacao } = require('../src/queries/historicoLiberacao');
 const { buscarHistoricoUniversalizacao } = require('../src/queries/historicoUniversalizacao');
+const { buscarResumoMedidasPublico } = require('../src/queries/medidasPublicoResumo');
 
 const SAIDA = path.join(__dirname, '..', '..', 'docs', 'data', 'historico.json');
 
@@ -26,10 +28,17 @@ const MERCADOS = [
   { chave: 'RURAL', valor: 'RURAL' },
 ];
 
-// As 3 queries retornam só contagens agregadas por MES/categoria (COUNT(*) com
-// GROUP BY) — nenhuma coluna de nota, matrícula ou qualquer dado individual.
-async function buscarCombinacao(pool, servico, mercado) {
-  const filtros = { servico: [servico], mercado };
+const REGIONAIS = ['CE', 'LE', 'MQ', 'NE', 'OE', 'SL', 'TR'];
+
+// As queries retornam só contagens agregadas por MES/categoria (COUNT(*) com
+// GROUP BY) e as medidas pendentes por código/situação — nenhuma coluna de
+// nota, matrícula ou qualquer dado individual.
+async function buscarCombinacao(pool, servico, mercado, regional) {
+  const filtros = {
+    servico: [servico],
+    mercado,
+    regional: regional === 'TODOS' ? REGIONAIS : [regional],
+  };
   const [aprovacao, liberacao, universalizacao] = await Promise.all([
     buscarHistoricoAprovacao(pool, filtros),
     buscarHistoricoLiberacao(pool, filtros),
@@ -45,21 +54,32 @@ async function main() {
     for (const servico of SERVICOS) {
       dados[servico] = {};
       for (const { chave, valor } of MERCADOS) {
-        console.log(`Exportando ${servico} / ${chave}...`);
-        dados[servico][chave] = await buscarCombinacao(pool, servico, valor);
+        dados[servico][chave] = {};
+        for (const regional of ['TODOS', ...REGIONAIS]) {
+          console.log(`Exportando ${servico} / ${chave} / ${regional}...`);
+          dados[servico][chave][regional] = await buscarCombinacao(pool, servico, valor, regional);
+        }
       }
     }
+    console.log('Exportando medidas pendentes...');
+    const medidas = await buscarResumoMedidasPublico(pool, SERVICOS, REGIONAIS);
 
     const payload = {
       geradoEm: new Date().toISOString(),
       servicos: SERVICOS,
       mercados: MERCADOS.map((m) => m.chave),
+      regionais: REGIONAIS,
+      medidas: {
+        linhas: medidas,
+        grupo1Medidas: config.regrasNegocio.grupo1Medidas,
+        grupo2Medidas: config.regrasNegocio.grupo2Medidas,
+      },
       dados,
     };
 
     fs.mkdirSync(path.dirname(SAIDA), { recursive: true });
     fs.writeFileSync(SAIDA, JSON.stringify(payload, null, 2), 'utf8');
-    console.log(`OK: ${SAIDA} gerado com sucesso (${payload.servicos.length * payload.mercados.length} combinações).`);
+    console.log(`OK: ${SAIDA} gerado com sucesso.`);
   } finally {
     await pool.close();
   }

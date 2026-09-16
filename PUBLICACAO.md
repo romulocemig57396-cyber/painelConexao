@@ -2,8 +2,8 @@
 
 O site fica em `docs/` e é um **repositório Git separado** do projeto principal
 (server/client não entram nisso). Só o conteúdo de `docs/` (HTML/CSS/JS +
-`data/historico.json`, que tem só contagens agregadas por mês/categoria) vai
-para um repositório público dedicado.
+`data/historico.json`, que tem apenas contagens agregadas) vai para um
+repositório público dedicado.
 
 ## Configuração inicial (rodar uma única vez)
 
@@ -69,13 +69,26 @@ atualizar_historico_publico.bat
 a última publicação, faz commit e push automaticamente para o repositório do
 passo 2-3. Se não houver mudança nos dados, ele avisa e não publica nada.
 
+## Conteúdo exportado
+
+O JSON contém o Histórico agregado por mês, serviço, mercado e Regional, além
+das medidas pendentes dos grupos 1 e 2 agregadas por serviço, Regional, medida
+e situação de vencimento. Ele também inclui as listas usadas pelos filtros e
+os dados dos quatro cards operacionais: Análise Inicial, Análise de Conexão,
+Orçamento e Orçamento Estimado.
+
+O site calcula as seleções combinadas no navegador. Os filtros padrão seguem o
+painel interno: PSAA e PSAI começam desmarcados, enquanto todas as Regionais e
+medidas do grupo 1 começam selecionadas.
+
 ## Antes de compartilhar o link — confirmação de privacidade
 
-Conferi o SQL das 3 queries usadas pelo script de exportação
+Conferi o SQL das queries usadas pelo script de exportação
 (`server/src/queries/historicoAprovacao.js`, `historicoLiberacao.js`,
-`historicoUniversalizacao.js`): todas fazem `SELECT MES, CATEGORIA (ou TIPO),
-COUNT(*) AS QTD ... GROUP BY`. Ou seja, o `historico.json` gerado contém
-**apenas contagens agregadas por mês/categoria/serviço/mercado** — nenhuma
+`historicoUniversalizacao.js` e `medidasPublicoResumo.js`): todas fazem
+`SELECT` de categorias/códigos e `COUNT(*) ... GROUP BY`. Ou seja, o
+`historico.json` gerado contém **apenas contagens agregadas por
+mês/categoria/serviço/mercado/Regional/medida** — nenhuma
 coluna de nota, matrícula, nome ou qualquer identificador individual é
 selecionada em nenhum ponto dessas queries, então não há como esse dado
 vazar para o JSON. As credenciais do banco (`server/.env`) nunca entram
