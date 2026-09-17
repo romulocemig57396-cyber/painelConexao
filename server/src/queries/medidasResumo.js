@@ -50,11 +50,12 @@ async function buscarResumoMedidas(pool, filtros = {}) {
   }
 
   const query = `
-    SELECT
+    SELECT COD_MEDIDA, DES_SITUACAO, COUNT(*) AS QUANTIDADE
+    FROM (
+      SELECT
         M.COD_MEDIDA,
-        ${SITUACAO_REGULATORIA} AS DES_SITUACAO,
-        COUNT(*) AS QUANTIDADE
-    FROM TBL_MEDIDAS M
+        ${SITUACAO_REGULATORIA} AS DES_SITUACAO
+      FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
         ON M.NUM_NOTA = N.NUM_NOTA
     LEFT JOIN TBL_LOCAIS L
@@ -74,11 +75,10 @@ async function buscarResumoMedidas(pool, filtros = {}) {
         AND M.COD_STAT_USU IN (${statusInClause})
         AND N.COD_SERVICO IN (${servicoInClause})
         ${extraWhere}
-    GROUP BY
-        M.COD_MEDIDA,
-        ${SITUACAO_REGULATORIA}
+    ) X
+    GROUP BY COD_MEDIDA, DES_SITUACAO
     ORDER BY
-        M.COD_MEDIDA, DES_SITUACAO;
+        COD_MEDIDA, DES_SITUACAO;
   `;
 
   const result = await request.query(query);

@@ -1,7 +1,7 @@
 const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
-const { APPLY_REGULATORIO, SITUACAO_REGULATORIA } = require('./regulatorio');
+const { SITUACAO_MEDIDA } = require('./regulatorio');
 
 async function buscarResumoMedida0070Regional(pool, filtros = {}) {
   const { grupo1Medidas, statusPendente, codServicoFiltro: servicosPadrao } = config.regrasNegocio;
@@ -14,18 +14,17 @@ async function buscarResumoMedida0070Regional(pool, filtros = {}) {
   const regionalInClause = regionais ? inClauseParams(request, 'rg_', regionais) : null;
 
   const filtrosExtras = regionalInClause
-    ? `AND COALESCE(R.REGIONAL_REGULATORIA, L.COD_SP) IN (${regionalInClause})`
+    ? `AND L.COD_SP IN (${regionalInClause})`
     : '';
   const query = `
     SELECT
-        COALESCE(R.REGIONAL_REGULATORIA, L.COD_SP) AS REGIONAL,
-        ${SITUACAO_REGULATORIA} AS DES_SITUACAO,
+        L.COD_SP AS REGIONAL,
+        ${SITUACAO_MEDIDA} AS DES_SITUACAO,
         COUNT(*) AS QUANTIDADE
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N ON M.NUM_NOTA = N.NUM_NOTA
     INNER JOIN TBL_LOCAIS L
         ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
-    ${APPLY_REGULATORIO}
     WHERE M.COD_MEDIDA = '0070'
       AND M.COD_STAT_USU IN (${statusInClause})
       AND N.COD_SERVICO IN (${servicoInClause})
@@ -37,7 +36,7 @@ async function buscarResumoMedida0070Regional(pool, filtros = {}) {
           AND M1.COD_STAT_USU IN (${statusInClause})
       )
       ${filtrosExtras}
-    GROUP BY COALESCE(R.REGIONAL_REGULATORIA, L.COD_SP), ${SITUACAO_REGULATORIA}
+    GROUP BY L.COD_SP, ${SITUACAO_MEDIDA}
     ORDER BY REGIONAL, DES_SITUACAO;
   `;
 

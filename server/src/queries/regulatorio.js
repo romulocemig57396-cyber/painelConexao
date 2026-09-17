@@ -29,6 +29,8 @@ const SITUACAO_REGULATORIA = `
         ELSE 'NO PRAZO'
     END`;
 
+const SITUACAO_MEDIDA = 'M.DES_SITUACAO';
+
 function logRegulatorio(rows, contexto) {
   if (process.env.REGULATORIO_DEBUG !== 'true') return;
   rows.slice(0, 20).forEach((row) => {
@@ -42,4 +44,4 @@ function logRegulatorio(rows, contexto) {
   });
 }
 
-module.exports = { APPLY_REGULATORIO, SITUACAO_REGULATORIA, logRegulatorio };
+module.exports = { APPLY_REGULATORIO, SITUACAO_REGULATORIA, SITUACAO_MEDIDA, logRegulatorio };

@@ -1,7 +1,7 @@
 const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
-const { APPLY_REGULATORIO, SITUACAO_REGULATORIA } = require('./regulatorio');
+const { APPLY_REGULATORIO, SITUACAO_REGULATORIA, SITUACAO_MEDIDA } = require('./regulatorio');
 
 /**
  * Exporta somente contagens agregadas das medidas pendentes. A CTE de notas
@@ -33,7 +33,8 @@ async function buscarResumoMedidasPublico(
     MEDIDAS_PENDENTES AS (
       SELECT M.NUM_NOTA, M.COD_MEDIDA, N.COD_SERVICO, N.MERCADO,
         COALESCE(R.REGIONAL_REGULATORIA, N.REGIONAL) AS REGIONAL,
-        ${SITUACAO_REGULATORIA} AS DES_SITUACAO
+        ${SITUACAO_REGULATORIA} AS SITUACAO_REGULATORIA,
+        ${SITUACAO_MEDIDA} AS SITUACAO_MEDIDA
       FROM TBL_MEDIDAS M
       INNER JOIN NOTAS_REGIONAIS N ON N.NUM_NOTA = M.NUM_NOTA
       ${APPLY_REGULATORIO}
@@ -45,12 +46,11 @@ async function buscarResumoMedidasPublico(
       MERCADO,
       REGIONAL,
       COD_MEDIDA,
-      CASE WHEN COD_MEDIDA = '0019' THEN 'PENDENTES' ELSE DES_SITUACAO END AS DES_SITUACAO,
+      SITUACAO_REGULATORIA AS DES_SITUACAO,
       COUNT(*) AS QUANTIDADE
     FROM MEDIDAS_PENDENTES
     WHERE COD_MEDIDA IN (${grupo1InClause})
-    GROUP BY COD_SERVICO, MERCADO, REGIONAL, COD_MEDIDA,
-      CASE WHEN COD_MEDIDA = '0019' THEN 'PENDENTES' ELSE DES_SITUACAO END
+    GROUP BY COD_SERVICO, MERCADO, REGIONAL, COD_MEDIDA, SITUACAO_REGULATORIA
 
     UNION ALL
 
@@ -60,7 +60,7 @@ async function buscarResumoMedidasPublico(
       M.MERCADO,
       M.REGIONAL,
       M.COD_MEDIDA,
-      M.DES_SITUACAO,
+      SITUACAO_MEDIDA AS DES_SITUACAO,
       COUNT(*) AS QUANTIDADE
     FROM MEDIDAS_PENDENTES M
     WHERE M.COD_MEDIDA IN (${grupo2InClause})
@@ -70,7 +70,7 @@ async function buscarResumoMedidasPublico(
         WHERE M1.NUM_NOTA = M.NUM_NOTA
           AND M1.COD_MEDIDA IN (${grupo1InClause})
       )
-    GROUP BY M.COD_SERVICO, M.MERCADO, M.REGIONAL, M.COD_MEDIDA, M.DES_SITUACAO
+    GROUP BY M.COD_SERVICO, M.MERCADO, M.REGIONAL, M.COD_MEDIDA, SITUACAO_MEDIDA
     ORDER BY GRUPO, SERVICO, REGIONAL, COD_MEDIDA, DES_SITUACAO;
   `);
 

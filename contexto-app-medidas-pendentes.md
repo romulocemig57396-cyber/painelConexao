@@ -162,6 +162,13 @@ registro regulatório correspondente.
 - Uma mesma `NUM_NOTA` pode aparecer em múltiplas linhas (uma por medida do grupo 1) — comportamento esperado.
 - Grupo 1 (filtro principal): `0019, 0020, 0021, 0032, 0080, 0086`
 - Grupo 2 (sinalização): `0070, 0805, 0804, 0700, 0720`
+- O vencimento e a situação do grupo 1 são obtidos da
+  `TBL_ANEEL_INDGER_V20_DIARIO`, usando `DAT_VENCIMENTO` como fonte oficial.
+- O grupo 2 não usa a tabela ANEEL: mantém `TBL_MEDIDAS.DAT_TPREV`,
+  `TBL_MEDIDAS.DES_SITUACAO` e `TBL_MEDIDAS.DES_SITUACAO2`.
+- Quando há mais de um registro ANEEL para uma nota do grupo 1, a seleção é
+  feita por `DAT_VENCIMENTO` não nulo, maior vencimento, maior `PRAZO_REAL` e,
+  por fim, maior `ITEM_ANEXO`, evitando duplicidade na tela.
 - Ambos os grupos e a lista de `COD_SERVICO` devem ser **configuráveis**, não fixos no código — a equipe pode querer ajustar isso no futuro.
 
 ---
