@@ -49,11 +49,29 @@ Medidas (tarefas/measures) vinculadas a uma nota.
 | `COD_MEDIDA` | nvarchar | Número da medida (ex: `'0019'`, `'0020'` — **com zero à esquerda, é texto**) |
 | `COD_STAT_USU` | nvarchar | Status: `ABER`, `ANDM`, `CONC`, `ENCE`, `CANC` |
 | `DAT_SOLIC` | datetime | Data de criação da medida |
-| `DAT_TPREV` | datetime | Data de vencimento |
+| `DAT_TPREV` | datetime | Data histórica da medida; não é mais usada como vencimento regulatório |
 | `DAT_TREAL` | datetime | Data de conclusão real |
 | `COD_AREA_RESP` | nvarchar | Área/equipe responsável (ex: `PE-NTC`, `CN-EXP`) |
 | `COD_RESP_CRIACAO` / `COD_RESP_CONC` | nvarchar | Responsável pela criação / conclusão |
-| `DES_SITUACAO` / `DES_SITUACAO2` | nvarchar | Situação de prazo já calculada pela fonte (`EM ATRASO`, `VENCE HOJE`, `VENCE X DIAS`, `NO PRAZO`) — **reaproveitar em vez de recalcular** |
+| `DES_SITUACAO` / `DES_SITUACAO2` | nvarchar | Situação operacional legada; os painéis regulatórios usam a situação derivada da tabela ANEEL |
+
+### `TBL_ANEEL_INDGER_V20_DIARIO`
+Fonte oficial consolidada do vencimento regulatório da REN 1000.
+
+| Campo | Uso no painel |
+|---|---|
+| `NUM_NOTA` | Relacionamento com `TBL_MEDIDAS.NUM_NOTA` |
+| `ITEM_ANEXO` | Item regulatório |
+| `PRAZO_PADRAO` | Prazo regulamentar do item |
+| `PRAZO_REAL` | Consumo real do prazo |
+| `DAT_VENCIMENTO` | Vencimento regulatório |
+| `REGIONAL` | Regional regulatória |
+
+Uma nota pode ter mais de um registro regulatório. O sistema seleciona um único
+registro por nota, priorizando `DAT_VENCIMENTO` não nulo mais recente, depois
+`PRAZO_REAL` maior e, por fim, `ITEM_ANEXO` em ordem decrescente. Esse critério
+evita duplicação na tela e representa o item vigente mais conservador disponível
+na tabela diária.
 
 Campos irrelevantes para este projeto: `DAT_IPREV`.
 
@@ -91,11 +109,13 @@ SELECT
     M.COD_MEDIDA,
     M.COD_STAT_USU,
     M.DAT_SOLIC      AS DATA_CRIACAO_MEDIDA,
-    M.DAT_TPREV      AS DATA_VENCIMENTO,
+    R.DAT_VENCIMENTO AS DATA_VENCIMENTO,
+    R.ITEM_ANEXO,
+    R.PRAZO_PADRAO,
+    R.PRAZO_REAL,
     M.DAT_TREAL      AS DATA_CONCLUSAO_REAL,
     M.COD_AREA_RESP,
-    M.DES_SITUACAO,
-    M.DES_SITUACAO2,
+    -- A situação é derivada de R.DAT_VENCIMENTO; 0019 permanece como PENDENTES.
     CASE WHEN P.MEDIDAS_PENDENTES IS NOT NULL THEN 'SIM' ELSE 'NAO' END AS TEM_PENDENCIA_GRUPO2,
     P.MEDIDAS_PENDENTES AS MEDIDAS_PENDENTES_GRUPO2
 FROM TBL_MEDIDAS M
@@ -110,6 +130,16 @@ LEFT JOIN (
       AND M2.COD_STAT_USU IN ('ABER','ANDM')
     GROUP BY M2.NUM_NOTA
 ) P ON P.NUM_NOTA = M.NUM_NOTA
+OUTER APPLY (
+    SELECT TOP (1) A.*
+    FROM TBL_ANEEL_INDGER_V20_DIARIO A
+    WHERE A.NUM_NOTA = M.NUM_NOTA
+    ORDER BY
+        CASE WHEN A.DAT_VENCIMENTO IS NULL THEN 1 ELSE 0 END,
+        A.DAT_VENCIMENTO DESC,
+        A.PRAZO_REAL DESC,
+        A.ITEM_ANEXO DESC
+) R
 WHERE 
     M.COD_MEDIDA IN ('0019','0020','0021','0032','0080','0086')
     AND M.COD_STAT_USU IN ('ABER','ANDM')
@@ -118,8 +148,14 @@ WHERE
         'PSAG','PSAI','PSAF','PSSG','PSIP','PSST'
     )
 ORDER BY 
-    N.NUM_NOTA, M.DAT_TPREV ASC;
+    N.NUM_NOTA, R.DAT_VENCIMENTO ASC;
 ```
+
+Durante a validação, `REGULATORIO_DEBUG=true` registra até 20 linhas por
+consulta com `NUM_NOTA`, `ITEM_ANEXO`, `PRAZO_PADRAO`, `DAT_VENCIMENTO` e
+`REGIONAL`. A comparação da base pendente encontrou 7.338 medidas, sendo
+3.461 com data diferente da antiga `TBL_MEDIDAS.DAT_TPREV` e 1.534 sem
+registro regulatório correspondente.
 
 **Notas importantes:**
 - `STRING_AGG` requer SQL Server 2017+. Se der erro, trocar por `FOR XML PATH`.

@@ -1,6 +1,7 @@
 const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
+const { APPLY_REGULATORIO, SITUACAO_REGULATORIA } = require('./regulatorio');
 
 /**
  * Mesma regra de negócio de buscarMedidasPendentes (grupo1/status/COD_SERVICO,
@@ -45,22 +46,20 @@ async function buscarResumoMedidas(pool, filtros = {}) {
     extraWhere += ' AND P.MEDIDAS_PENDENTES IS NOT NULL';
   }
   if (regionalInClause) {
-    extraWhere += ` AND L.COD_SP IN (${regionalInClause})`;
+    extraWhere += ` AND COALESCE(R.REGIONAL_REGULATORIA, L.COD_SP) IN (${regionalInClause})`;
   }
 
   const query = `
     SELECT
         M.COD_MEDIDA,
-        CASE
-            WHEN M.COD_MEDIDA = '0019' THEN 'PENDENTES'
-            ELSE M.DES_SITUACAO
-        END AS DES_SITUACAO,
+        ${SITUACAO_REGULATORIA} AS DES_SITUACAO,
         COUNT(*) AS QUANTIDADE
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
         ON M.NUM_NOTA = N.NUM_NOTA
     LEFT JOIN TBL_LOCAIS L
         ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
+    ${APPLY_REGULATORIO}
     LEFT JOIN (
         SELECT
             M2.NUM_NOTA,
@@ -77,10 +76,7 @@ async function buscarResumoMedidas(pool, filtros = {}) {
         ${extraWhere}
     GROUP BY
         M.COD_MEDIDA,
-        CASE
-            WHEN M.COD_MEDIDA = '0019' THEN 'PENDENTES'
-            ELSE M.DES_SITUACAO
-        END
+        ${SITUACAO_REGULATORIA}
     ORDER BY
         M.COD_MEDIDA, DES_SITUACAO;
   `;

@@ -1,5 +1,6 @@
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
+const { APPLY_REGULATORIO, SITUACAO_REGULATORIA } = require('./regulatorio');
 
 /**
  * Versão de debug da query principal: só TBL_MEDIDAS + TBL_NOTAS com o filtro
@@ -25,14 +26,19 @@ async function buscarMedidasSimples(pool) {
         M.COD_MEDIDA,
         M.COD_STAT_USU,
         M.DAT_SOLIC      AS DATA_CRIACAO_MEDIDA,
-        M.DAT_TPREV      AS DATA_VENCIMENTO,
+        R.DAT_VENCIMENTO AS DATA_VENCIMENTO,
+        R.ITEM_ANEXO,
+        R.PRAZO_PADRAO,
+        R.PRAZO_REAL,
+        R.REGIONAL_REGULATORIA AS REGIONAL,
         M.DAT_TREAL      AS DATA_CONCLUSAO_REAL,
         M.COD_AREA_RESP,
-        M.DES_SITUACAO,
+        ${SITUACAO_REGULATORIA} AS DES_SITUACAO,
         M.DES_SITUACAO2
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
         ON M.NUM_NOTA = N.NUM_NOTA
+    ${APPLY_REGULATORIO}
     WHERE
         M.COD_MEDIDA IN (${grupo1InClause})
         AND M.COD_STAT_USU IN (${statusInClause})

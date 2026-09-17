@@ -1,6 +1,7 @@
 const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
+const { APPLY_REGULATORIO, SITUACAO_REGULATORIA, logRegulatorio } = require('./regulatorio');
 
 /**
  * Monta e executa a query de medidas pendentes (grupo 1) com sinalização de grupo 2,
@@ -39,7 +40,7 @@ async function buscarMedidasPendentes(pool, filtros = {}) {
   }
   if (filtros.situacao) {
     request.input('filtroSituacao', sql.NVarChar, filtros.situacao);
-    extraWhere += ' AND M.DES_SITUACAO = @filtroSituacao';
+  extraWhere += ` AND ${SITUACAO_REGULATORIA} = @filtroSituacao`;
   }
   // "Com pendência grupo 2" reaproveita o mesmo P (LEFT JOIN) já usado pra
   // calcular TEM_PENDENCIA_GRUPO2 — atalho do card de métrica.
@@ -47,7 +48,7 @@ async function buscarMedidasPendentes(pool, filtros = {}) {
     extraWhere += ' AND P.MEDIDAS_PENDENTES IS NOT NULL';
   }
   if (regionalInClause) {
-    extraWhere += ` AND L.COD_SP IN (${regionalInClause})`;
+    extraWhere += ` AND COALESCE(R.REGIONAL_REGULATORIA, L.COD_SP) IN (${regionalInClause})`;
   }
 
   const query = `
@@ -57,17 +58,22 @@ async function buscarMedidasPendentes(pool, filtros = {}) {
         N.DES_SERVICO,
         N.DES_OBRA,
         N.DES_ENDERECO_OBRA,
-        L.COD_SP         AS REGIONAL,
+        COALESCE(R.REGIONAL_REGULATORIA, L.COD_SP) AS REGIONAL,
         L.DES_LOCAL      AS LOCALIDADE,
         N.DAT_CRIACAO    AS DATA_CRIACAO_NOTA,
         M.COD_MEDIDA,
         M.COD_STAT_USU,
         M.DAT_SOLIC      AS DATA_CRIACAO_MEDIDA,
-        M.DAT_TPREV      AS DATA_VENCIMENTO,
+        R.DAT_VENCIMENTO AS DATA_VENCIMENTO,
+        R.ITEM_ANEXO,
+        R.PRAZO_PADRAO,
+        R.PRAZO_REAL,
+        R.GER_EXP_RESP,
+        R.TIPO_PRAZO,
         M.DAT_TREAL      AS DATA_CONCLUSAO_REAL,
         M.COD_AREA_RESP,
-        M.DES_SITUACAO,
-        M.DES_SITUACAO2,
+        ${SITUACAO_REGULATORIA} AS DES_SITUACAO,
+        ${SITUACAO_REGULATORIA} AS DES_SITUACAO2,
         CASE WHEN P.MEDIDAS_PENDENTES IS NOT NULL THEN 'SIM' ELSE 'NAO' END AS TEM_PENDENCIA_GRUPO2,
         P.MEDIDAS_PENDENTES AS MEDIDAS_PENDENTES_GRUPO2
     FROM TBL_MEDIDAS M
@@ -75,6 +81,7 @@ async function buscarMedidasPendentes(pool, filtros = {}) {
         ON M.NUM_NOTA = N.NUM_NOTA
     LEFT JOIN TBL_LOCAIS L
         ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
+    ${APPLY_REGULATORIO}
     LEFT JOIN (
         SELECT
             M2.NUM_NOTA,
@@ -90,10 +97,11 @@ async function buscarMedidasPendentes(pool, filtros = {}) {
         AND N.COD_SERVICO IN (${servicoInClause})
         ${extraWhere}
     ORDER BY
-        N.NUM_NOTA, M.DAT_TPREV ASC;
+        N.NUM_NOTA, R.DAT_VENCIMENTO ASC;
   `;
 
   const result = await request.query(query);
+  logRegulatorio(result.recordset, 'medidas-pendentes');
   return result.recordset;
 }
 

@@ -1,6 +1,7 @@
 const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
+const { APPLY_REGULATORIO, SITUACAO_REGULATORIA } = require('./regulatorio');
 
 /**
  * Mesmo padrão de buscarResumoMedidas, mas agregando as medidas do GRUPO 2
@@ -41,19 +42,20 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
     extraWhere += ' AND M.COD_STAT_USU = @filtroStatus';
   }
   if (regionalInClause) {
-    extraWhere += ` AND L.COD_SP IN (${regionalInClause})`;
+    extraWhere += ` AND COALESCE(R.REGIONAL_REGULATORIA, L.COD_SP) IN (${regionalInClause})`;
   }
 
   const query = `
     SELECT
         M.COD_MEDIDA,
-        M.DES_SITUACAO,
+        ${SITUACAO_REGULATORIA} AS DES_SITUACAO,
         COUNT(*) AS QUANTIDADE
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
         ON M.NUM_NOTA = N.NUM_NOTA
     LEFT JOIN TBL_LOCAIS L
         ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
+    ${APPLY_REGULATORIO}
     WHERE
         M.COD_MEDIDA IN (${grupo2InClause})
         AND M.COD_STAT_USU IN (${statusInClause})

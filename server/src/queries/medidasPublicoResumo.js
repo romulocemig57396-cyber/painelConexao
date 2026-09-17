@@ -1,6 +1,7 @@
 const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
+const { APPLY_REGULATORIO, SITUACAO_REGULATORIA } = require('./regulatorio');
 
 /**
  * Exporta somente contagens agregadas das medidas pendentes. A CTE de notas
@@ -22,7 +23,7 @@ async function buscarResumoMedidasPublico(
 
   const result = await request.query(`
     WITH NOTAS_REGIONAIS AS (
-      SELECT N.NUM_NOTA, N.COD_SERVICO, L.COD_SP AS REGIONAL
+      SELECT N.NUM_NOTA, N.COD_SERVICO, N.DES_MERCADO AS MERCADO, L.COD_SP AS REGIONAL
       FROM TBL_NOTAS N
       LEFT JOIN TBL_LOCAIS L
         ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
@@ -30,21 +31,25 @@ async function buscarResumoMedidasPublico(
         AND L.COD_SP IN (${regionalInClause})
     ),
     MEDIDAS_PENDENTES AS (
-      SELECT M.NUM_NOTA, M.COD_MEDIDA, M.DES_SITUACAO, N.COD_SERVICO, N.REGIONAL
+      SELECT M.NUM_NOTA, M.COD_MEDIDA, N.COD_SERVICO, N.MERCADO,
+        COALESCE(R.REGIONAL_REGULATORIA, N.REGIONAL) AS REGIONAL,
+        ${SITUACAO_REGULATORIA} AS DES_SITUACAO
       FROM TBL_MEDIDAS M
       INNER JOIN NOTAS_REGIONAIS N ON N.NUM_NOTA = M.NUM_NOTA
+      ${APPLY_REGULATORIO}
       WHERE M.COD_STAT_USU IN (${statusInClause})
     )
     SELECT
       'GRUPO1' AS GRUPO,
       COD_SERVICO AS SERVICO,
+      MERCADO,
       REGIONAL,
       COD_MEDIDA,
       CASE WHEN COD_MEDIDA = '0019' THEN 'PENDENTES' ELSE DES_SITUACAO END AS DES_SITUACAO,
       COUNT(*) AS QUANTIDADE
     FROM MEDIDAS_PENDENTES
     WHERE COD_MEDIDA IN (${grupo1InClause})
-    GROUP BY COD_SERVICO, REGIONAL, COD_MEDIDA,
+    GROUP BY COD_SERVICO, MERCADO, REGIONAL, COD_MEDIDA,
       CASE WHEN COD_MEDIDA = '0019' THEN 'PENDENTES' ELSE DES_SITUACAO END
 
     UNION ALL
@@ -52,6 +57,7 @@ async function buscarResumoMedidasPublico(
     SELECT
       'GRUPO2' AS GRUPO,
       M.COD_SERVICO AS SERVICO,
+      M.MERCADO,
       M.REGIONAL,
       M.COD_MEDIDA,
       M.DES_SITUACAO,
@@ -64,7 +70,7 @@ async function buscarResumoMedidasPublico(
         WHERE M1.NUM_NOTA = M.NUM_NOTA
           AND M1.COD_MEDIDA IN (${grupo1InClause})
       )
-    GROUP BY M.COD_SERVICO, M.REGIONAL, M.COD_MEDIDA, M.DES_SITUACAO
+    GROUP BY M.COD_SERVICO, M.MERCADO, M.REGIONAL, M.COD_MEDIDA, M.DES_SITUACAO
     ORDER BY GRUPO, SERVICO, REGIONAL, COD_MEDIDA, DES_SITUACAO;
   `);
 
