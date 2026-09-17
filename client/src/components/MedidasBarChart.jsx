@@ -9,6 +9,7 @@ const SITUACAO_META = {
   'VENCE HOJE': { label: 'Vence hoje', color: '#8a5a0b' },
   'VENCE 7 DIAS': { label: 'Vence em até 7 dias', color: '#2a78d6' },
   'NO PRAZO': { label: 'No prazo', color: '#2f9e6e' },
+  'SEM VENCIMENTO REGULATÓRIO': { label: 'Sem vencimento regulatório', color: '#898781' },
 };
 const COR_FALLBACK = '#898781';
 

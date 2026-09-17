@@ -39,7 +39,14 @@ const SERVICOS_HISTORICO = [
   'COMT', 'COBT', 'PSAA', 'PSER', 'PSAC', 'PSRP', 'PSAG', 'PSAI', 'PSAF', 'PSSG', 'PSIP', 'PSST',
 ];
 const MERCADOS_HISTORICO = ['URBANO', 'RURAL'];
-const SITUACOES_VENCIMENTO = ['PENDENTES', 'EM ATRASO', 'VENCE HOJE', 'VENCE 7 DIAS', 'NO PRAZO'];
+const SITUACOES_VENCIMENTO = [
+  'PENDENTES',
+  'EM ATRASO',
+  'VENCE HOJE',
+  'VENCE 7 DIAS',
+  'NO PRAZO',
+  'SEM VENCIMENTO REGULATÓRIO',
+];
 
 export default function App() {
   const [rows, setRows] = useState([]);
