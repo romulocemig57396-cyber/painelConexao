@@ -69,6 +69,17 @@ atualizar_historico_publico.bat
 a última publicação, faz commit e push automaticamente para o repositório do
 passo 2-3. Se não houver mudança nos dados, ele avisa e não publica nada.
 
+No painel principal, o botão **Atualizar painel externo**, no canto superior
+direito do cabeçalho, oferece o mesmo fluxo sem abrir um arquivo `.bat`. O
+servidor executa a exportação em segundo plano, atualiza somente
+`docs/data/historico.json`, faz `pull --ff-only`, commit e push. O botão mostra
+o andamento e impede duas atualizações simultâneas.
+
+Esse recurso depende de o processo do painel ter acesso ao `node`, ao `git` e
+às credenciais do repositório `docs/`. Se o painel for iniciado por um serviço
+ou pelo Agendador de Tarefas, configure esses executáveis e a autenticação no
+ambiente desse processo, não apenas no terminal interativo do usuário.
+
 ## Conteúdo exportado
 
 O JSON contém o Histórico agregado por mês, serviço, mercado e Regional, além

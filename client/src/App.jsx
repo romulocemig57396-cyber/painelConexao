@@ -69,6 +69,7 @@ export default function App() {
   const [inconsistenciasError, setInconsistenciasError] = useState(null);
   const [tiposInconsistencia, setTiposInconsistencia] = useState([]);
   const [tiposSelecionados, setTiposSelecionados] = useState([]);
+  const [atualizacaoPublica, setAtualizacaoPublica] = useState({ status: 'idle' });
 
   // Aba "Histórico": gráficos de aprovação/liberação são independentes dos
   // filtros acima — busca uma vez só, sem relação com área/status/medida/card.
@@ -111,6 +112,30 @@ export default function App() {
       setMedidasSelecionadas(medidasGrupo1);
       return;
     }
+
+    async function atualizarPainelPublico() {
+      if (!window.confirm('Atualizar os dados do painel externo agora?')) return;
+      try {
+        const resp = await fetch('/api/painel-publico/atualizar', { method: 'POST' });
+        const json = await resp.json();
+        if (!resp.ok) throw new Error(json.error || 'Não foi possível iniciar a atualização.');
+        setAtualizacaoPublica(json.data);
+      } catch (err) {
+        setAtualizacaoPublica({ status: 'error', error: err.message });
+      }
+    }
+
+    useEffect(() => {
+      if (atualizacaoPublica.status !== 'running') return undefined;
+      const timer = window.setInterval(async () => {
+        const resp = await fetch('/api/painel-publico/atualizacao');
+        if (!resp.ok) return;
+        const json = await resp.json();
+        setAtualizacaoPublica(json.data);
+        if (json.data.status !== 'running') window.clearInterval(timer);
+      }, 3000);
+      return () => window.clearInterval(timer);
+    }, [atualizacaoPublica.status]);
     setCardFiltroAtivo(filterKey);
     setMedidasSelecionadas(medidasDoCard);
   }
@@ -369,7 +394,11 @@ export default function App() {
 
   return (
     <>
-      <Header ultimaAtualizacao={ultimaAtualizacao} />
+      <Header
+        ultimaAtualizacao={ultimaAtualizacao}
+        atualizacaoPublica={atualizacaoPublica}
+        onAtualizarPublico={atualizarPainelPublico}
+      />
       <main className="app-main">
         {(abaAtiva === 'lista' || abaAtiva === 'graficos') && (
           <>
