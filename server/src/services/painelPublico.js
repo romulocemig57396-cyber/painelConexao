@@ -1,6 +1,5 @@
 const path = require('path');
 const { execFile } = require('child_process');
-const config = require('../config');
 
 let job = {
   status: 'idle',
@@ -38,7 +37,9 @@ async function atualizar() {
   } catch (error) {
     throw new Error(
       `Repositório do painel público não encontrado em "${docs}". ` +
-        'Configure PUBLIC_REPO_DIR no server/.env apontando para o clone do painel público.',
+        'Configure PUBLIC_REPO_DIR no server/.env apontando para o clone do painel público. ' +
+        `Detalhe: ${error.message}`,
+      { cause: error },
     );
   }
 

@@ -1,4 +1,3 @@
-const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
 const { SITUACAO_MEDIDA } = require('./regulatorio');
