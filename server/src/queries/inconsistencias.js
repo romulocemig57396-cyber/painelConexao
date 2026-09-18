@@ -64,6 +64,10 @@ async function buscarInconsistencias(pool) {
   const tipo6MedidaNaoCancelada = campoNaoContemPalavra('M.COD_STAT_USU', request, 't6MedCanc', statusMedidaCancelada);
   const tipo6PendenteStatus = campoContemAlgumaPalavra('M2.COD_STAT_USU', request, 't6pend', statusPendente);
 
+  // Tipo 7: uma 0070 cancelada não conta como "ter" 0070 — só ignora a
+  // inconsistência se existir 0070 ativa (status não contém CANC).
+  const tipo7ZeroSetentaNaoCancelada = campoNaoContemPalavra('M2.COD_STAT_USU', request, 't7_0070', statusMedidaCancelada);
+
   const colunas = `
         N.NUM_NOTA, N.COD_SERVICO, N.DAT_CRIACAO, N.COD_STATUS_USU_NOTA,
         M.COD_MEDIDA, M.COD_STAT_USU`;
@@ -198,6 +202,7 @@ async function buscarInconsistencias(pool) {
       AND NOT EXISTS (
           SELECT 1 FROM TBL_MEDIDAS M2
           WHERE M2.NUM_NOTA = M.NUM_NOTA AND M2.COD_MEDIDA = '0070'
+            AND ${tipo7ZeroSetentaNaoCancelada}
       )
     ) X
     WHERE X.COD_SERVICO IN (${servicoInClause})
