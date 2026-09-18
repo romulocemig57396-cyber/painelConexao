@@ -1,6 +1,9 @@
 @echo off
 setlocal
 
+set "RAIZ=%~dp0"
+set "DOCS=%RAIZ%docs"
+
 REM ============================================
 REM Detecta Node e Git automaticamente
 REM ============================================
@@ -14,9 +17,6 @@ if %errorlevel% equ 0 (
   if exist "C:\Users\%USERNAME%\node-v24.19.0-win-x64\node.exe" (
     set "PATH=%PATH%;C:\Users\%USERNAME%\node-v24.19.0-win-x64"
     echo [OK] Node portatil encontrado em C:\Users\%USERNAME%\node-v24.19.0-win-x64
-  ) else if exist "C:\Users\c057396\node-v24.19.0-win-x64\node.exe" (
-    set "PATH=%PATH%;C:\Users\c057396\node-v24.19.0-win-x64"
-    echo [OK] Node portatil encontrado em C:\Users\c057396\node-v24.19.0-win-x64
   ) else if exist "%RAIZ%node\node.exe" (
     set "PATH=%PATH%;%RAIZ%node"
     echo [OK] Node encontrado na pasta do projeto
@@ -36,9 +36,6 @@ if %errorlevel% equ 0 (
   if exist "C:\Users\%USERNAME%\PortableGit\cmd\git.exe" (
     set "PATH=%PATH%;C:\Users\%USERNAME%\PortableGit\cmd"
     echo [OK] Git portatil encontrado em C:\Users\%USERNAME%\PortableGit\cmd
-  ) else if exist "C:\Users\c057396\PortableGit\cmd\git.exe" (
-    set "PATH=%PATH%;C:\Users\c057396\PortableGit\cmd"
-    echo [OK] Git portatil encontrado em C:\Users\c057396\PortableGit\cmd
   ) else if exist "C:\Program Files\Git\cmd\git.exe" (
     set "PATH=%PATH%;C:\Program Files\Git\cmd"
     echo [OK] Git encontrado em C:\Program Files\Git
@@ -48,9 +45,6 @@ if %errorlevel% equ 0 (
     exit /b 1
   )
 )
-
-set "RAIZ=%~dp0"
-set "DOCS=%RAIZ%docs"
 
 echo.
 echo ============================================
