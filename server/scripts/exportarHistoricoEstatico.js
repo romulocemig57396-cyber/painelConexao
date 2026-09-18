@@ -11,26 +11,26 @@ const SAIDA = process.env.PUBLIC_DATA_PATH
   ? path.resolve(process.env.PUBLIC_DATA_PATH)
   : path.join(__dirname, '..', '..', 'docs', 'data', 'historico.json');
 
-// Os 12 códigos habilitados no filtro (client/src/App.jsx SERVICOS_HISTORICO /
-// server/src/config.js regrasHistorico.servicosDisponiveis). Cada um é
-// exportado individualmente — o site estático soma as combinações escolhidas
-// no cliente (ver docs/js/principal.js), não precisa de combos pré-calculados
-// aqui (evitaria uma explosão combinatória de 2^12 conjuntos).
-const SERVICOS = [
-  'COMT', 'COBT', 'PSAA', 'PSER', 'PSAC', 'PSRP', 'PSAG', 'PSAI', 'PSAF', 'PSSG', 'PSIP', 'PSST',
-];
+// Mesma lista configurável usada pelo backend (server/src/config.js
+// regrasHistorico.servicosDisponiveis, vinda de HIST_SERVICOS_DISPONIVEIS no
+// .env) e pelo filtro "Serviço" da aba Histórico no client — fonte única,
+// evita a lista dessincronizar entre os dois lados. Cada um é exportado
+// individualmente — o site estático soma as combinações escolhidas no
+// cliente (ver docs/js/principal.js), não precisa de combos pré-calculados
+// aqui (evitaria uma explosão combinatória de 2^N conjuntos).
+const SERVICOS = config.regrasHistorico.servicosDisponiveis;
 
 // 'TODOS' == sem filtro de mercado (mesmo comportamento do combo "Todos" no
 // client React: string vazia -> filtros.mercado undefined -> URBANO+RURAL juntos).
-// Mercado continua só 2 opções, então os 3 buckets pré-calculados bastam (ao
-// contrário de serviço, não precisa somar no cliente).
+// Mercado continua poucas opções, então os buckets pré-calculados bastam (ao
+// contrário de serviço, não precisa somar no cliente). Deriva de
+// regrasHistorico.mercadosDisponiveis (mesma fonte usada pelo backend/client).
 const MERCADOS = [
   { chave: 'TODOS', valor: undefined },
-  { chave: 'URBANO', valor: 'URBANO' },
-  { chave: 'RURAL', valor: 'RURAL' },
+  ...config.regrasHistorico.mercadosDisponiveis.map((mercado) => ({ chave: mercado, valor: mercado })),
 ];
 
-const REGIONAIS = ['CE', 'LE', 'MQ', 'NE', 'OE', 'SL', 'TR'];
+const REGIONAIS = config.regrasHistorico.regionaisDisponiveis;
 
 // As queries retornam só contagens agregadas por MES/categoria (COUNT(*) com
 // GROUP BY) e as medidas pendentes por código/situação — nenhuma coluna de

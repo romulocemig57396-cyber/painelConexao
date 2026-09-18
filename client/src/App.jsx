@@ -35,10 +35,6 @@ const CATEGORIAS_LIBERACAO = [
 
 const CATEGORIAS_UNIVERSALIZACAO = [{ key: 'UNIVERSALIZADA', label: 'Universalizada', color: '#2f9e6e' },{ key: 'NAO_UNIVERSALIZADA', label: 'Não universalizada', color: '#8a5a0b' },{ key: 'FORA_UNIVERSALIZACAO', label: 'Fora da universalização', color: '#2a78d6' },{ key: 'SEGURANCA', label: 'Obras de segurança', color: '#a02b2b' },{ key: 'OUTROS', label: 'Outros', color: '#898781' },];
 
-const SERVICOS_HISTORICO = [
-  'COMT', 'COBT', 'PSAA', 'PSER', 'PSAC', 'PSRP', 'PSAG', 'PSAI', 'PSAF', 'PSSG', 'PSIP', 'PSST',
-];
-const MERCADOS_HISTORICO = ['URBANO', 'RURAL'];
 const SITUACOES_VENCIMENTO = [
   'PENDENTES',
   'EM ATRASO',
@@ -87,14 +83,21 @@ export default function App() {
   const [historicoUniversalizacao, setHistoricoUniversalizacao] = useState([]);
   const [historicoLoading, setHistoricoLoading] = useState(true);
   const [historicoError, setHistoricoError] = useState(null);
+  // Opções disponíveis de serviço/mercado da aba Histórico vêm do backend
+  // (regrasHistorico, mesma fonte usada pelo script de exportação estática),
+  // igual já é feito com "regionais" acima — evita duplicar essas listas aqui.
+  const [historicoServicosDisponiveis, setHistoricoServicosDisponiveis] = useState([]);
+  const [historicoServicoInicializado, setHistoricoServicoInicializado] = useState(false);
+  const [historicoMercadosDisponiveis, setHistoricoMercadosDisponiveis] = useState([]);
+  const [historicoMercadoInicializado, setHistoricoMercadoInicializado] = useState(false);
   // ChipMultiFilter trabalha com array de selecionadas. Serviço começa só com
-  // COMT (preserva o comportamento/carga de antes); "Todos" soma os 12
+  // COMT (preserva o comportamento/carga de antes); "Todos" soma os
   // códigos disponíveis (servico vira lista pro backend, sem default implícito).
-  const [historicoServicoSelecionado, setHistoricoServicoSelecionado] = useState(  SERVICOS_HISTORICO.filter((s) => s !== 'PSAA' && s !== 'PSAI'),);
+  const [historicoServicoSelecionado, setHistoricoServicoSelecionado] = useState([]);
   const historicoServico = historicoServicoSelecionado.join(',');
-  // As duas opções de mercado marcadas (padrão) equivalem a "Todos" = sem
+  // As opções de mercado marcadas (padrão) equivalem a "Todos" = sem
   // filtro de mercado no backend.
-  const [historicoMercadoSelecionado, setHistoricoMercadoSelecionado] = useState(MERCADOS_HISTORICO);
+  const [historicoMercadoSelecionado, setHistoricoMercadoSelecionado] = useState([]);
   const historicoMercado = historicoMercadoSelecionado.length === 1 ? historicoMercadoSelecionado[0] : '';
 
   // Gráfico de produtividade tem filtro próprio de medida (independente dos
@@ -308,6 +311,24 @@ export default function App() {
         setHistoricoAprovacao(jsonAprovacao.data);
         setHistoricoLiberacao(jsonLiberacao.data);
         setHistoricoUniversalizacao(jsonUniversalizacao.data);
+
+        // Os 3 endpoints compartilham a mesma regrasHistorico — basta ler de um.
+        if (jsonAprovacao.regrasNegocio?.servicosDisponiveis?.length) {
+          const disponiveis = jsonAprovacao.regrasNegocio.servicosDisponiveis;
+          setHistoricoServicosDisponiveis(disponiveis);
+          if (!historicoServicoInicializado) {
+            setHistoricoServicoSelecionado(disponiveis.filter((s) => s !== 'PSAA' && s !== 'PSAI'));
+            setHistoricoServicoInicializado(true);
+          }
+        }
+        if (jsonAprovacao.regrasNegocio?.mercadosDisponiveis?.length) {
+          const disponiveis = jsonAprovacao.regrasNegocio.mercadosDisponiveis;
+          setHistoricoMercadosDisponiveis(disponiveis);
+          if (!historicoMercadoInicializado) {
+            setHistoricoMercadoSelecionado(disponiveis);
+            setHistoricoMercadoInicializado(true);
+          }
+        }
       } catch (err) {
         setHistoricoError(err.message);
       } finally {
@@ -315,6 +336,7 @@ export default function App() {
       }
     }
     carregarHistorico();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historicoServico, historicoMercado, historicoRegionaisSelecionadas]);
 
   useEffect(() => {
@@ -484,7 +506,7 @@ export default function App() {
             <section className="filters-bar">
               <ChipMultiFilter
                 label="Serviço"
-                opcoes={SERVICOS_HISTORICO}
+                opcoes={historicoServicosDisponiveis}
                 selecionadas={historicoServicoSelecionado}
                 onChange={setHistoricoServicoSelecionado}
                 wrapperClassName="filters-bar__field filters-bar__field--full"
@@ -498,7 +520,7 @@ export default function App() {
               />
               <ChipMultiFilter
                 label="Mercado"
-                opcoes={MERCADOS_HISTORICO}
+                opcoes={historicoMercadosDisponiveis}
                 selecionadas={historicoMercadoSelecionado}
                 onChange={setHistoricoMercadoSelecionado}
                 wrapperClassName="filters-bar__field"
