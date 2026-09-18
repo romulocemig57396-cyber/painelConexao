@@ -3,6 +3,7 @@ const ABAS = [
   { key: 'graficos', label: 'Gráficos' },
   { key: 'inconsistencias', label: 'Inconsistências' },
   { key: 'historico', label: 'Histórico' },
+  { key: 'orcamentos', label: 'Orçamentos emitíveis' },
 ];
 
 export default function Tabs({ abaAtiva, onChange }) {

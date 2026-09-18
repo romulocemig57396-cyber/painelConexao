@@ -8,6 +8,7 @@ const ultimaAtualizacaoRouter = require('./routes/ultimaAtualizacao');
 const inconsistenciasRouter = require('./routes/inconsistencias');
 const historicoRouter = require('./routes/historico');
 const painelPublicoRouter = require('./routes/painelPublico');
+const orcamentosEmitiveisRouter = require('./routes/orcamentosEmitiveis');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use('/api', ultimaAtualizacaoRouter);
 app.use('/api', inconsistenciasRouter);
 app.use('/api', historicoRouter);
 app.use('/api', painelPublicoRouter);
+app.use('/api', orcamentosEmitiveisRouter);
 app.use('/api', medidasRouter);
 
 // Rota /api/* desconhecida => 404 json, em vez de cair no fallback do SPA abaixo.

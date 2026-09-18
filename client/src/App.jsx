@@ -110,6 +110,16 @@ export default function App() {
   const [produtividadeLoading, setProdutividadeLoading] = useState(true);
   const [produtividadeError, setProdutividadeError] = useState(null);
 
+  // Aba "Orçamentos emitíveis": lista independente (medida fixa, 0080 com
+  // 0070 concluída) — reaproveita as opções de serviço/regional já buscadas
+  // acima (servicos/regionais), só com seleção própria.
+  const [orcamentos, setOrcamentos] = useState([]);
+  const [orcamentosLoading, setOrcamentosLoading] = useState(true);
+  const [orcamentosError, setOrcamentosError] = useState(null);
+  const [orcamentosServicosSelecionados, setOrcamentosServicosSelecionados] = useState([]);
+  const [orcamentosServicosInicializado, setOrcamentosServicosInicializado] = useState(false);
+  const [orcamentosRegionaisSelecionadas, setOrcamentosRegionaisSelecionadas] = useState([]);
+
   function limparFiltros() {
     setServicosSelecionados(servicos);
     setRegionaisSelecionadas(regionais);
@@ -250,6 +260,7 @@ export default function App() {
         setRegionais(regionaisDisponiveis);
         setRegionaisSelecionadas(regionaisDisponiveis);
         setHistoricoRegionaisSelecionadas(regionaisDisponiveis);
+        setOrcamentosRegionaisSelecionadas(regionaisDisponiveis);
       } catch (err) {
         setError(err.message);
       }
@@ -382,6 +393,43 @@ export default function App() {
     carregarProdutividade();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [produtividadeMedidasSelecionadas, historicoServico, historicoMercado, historicoRegionaisSelecionadas]);
+
+  useEffect(() => {
+    // "servicos" já é buscado pra aba Lista (carregarDados) — só espera
+    // popular pra definir a seleção inicial desta aba, sem refazer a chamada.
+    if (servicos.length && !orcamentosServicosInicializado) {
+      setOrcamentosServicosSelecionados(servicos.filter((s) => !['PSAA', 'PSAI'].includes(s)));
+      setOrcamentosServicosInicializado(true);
+    }
+  }, [servicos, orcamentosServicosInicializado]);
+
+  async function carregarOrcamentos() {
+    setOrcamentosLoading(true);
+    setOrcamentosError(null);
+    try {
+      const params = new URLSearchParams();
+      if (orcamentosServicosSelecionados.length !== servicos.length) {
+        params.set('servico', orcamentosServicosSelecionados.join(','));
+      }
+      if (orcamentosRegionaisSelecionadas.length !== regionais.length) {
+        params.set('regional', orcamentosRegionaisSelecionadas.join(','));
+      }
+      const qs = params.toString();
+      const resp = await fetch(`/api/orcamentos-emitiveis?${qs}`);
+      if (!resp.ok) throw new Error(`Falha na API (${resp.status})`);
+      const json = await resp.json();
+      setOrcamentos(json.data);
+    } catch (err) {
+      setOrcamentosError(err.message);
+    } finally {
+      setOrcamentosLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    carregarOrcamentos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orcamentosServicosSelecionados, orcamentosRegionaisSelecionadas]);
 
   const metrics = useMemo(() => {
     const contarMedidas = (codigos) => rows.filter((row) => codigos.includes(row.COD_MEDIDA)).length;
@@ -566,6 +614,29 @@ export default function App() {
               topN={historicoProdutividadeTopN}
               loading={produtividadeLoading}
             />
+          </>
+        )}
+
+        {abaAtiva === 'orcamentos' && (
+          <>
+            <section className="filters-bar">
+              <ChipMultiFilter
+                label="Serviço"
+                opcoes={servicos}
+                selecionadas={orcamentosServicosSelecionados}
+                onChange={setOrcamentosServicosSelecionados}
+                wrapperClassName="filters-bar__field filters-bar__field--full"
+              />
+              <ChipMultiFilter
+                label="Regional"
+                opcoes={regionais}
+                selecionadas={orcamentosRegionaisSelecionadas}
+                onChange={setOrcamentosRegionaisSelecionadas}
+                wrapperClassName="filters-bar__field filters-bar__field--full"
+              />
+            </section>
+            {orcamentosError && <div className="error-banner">Erro ao carregar dados: {orcamentosError}</div>}
+            <MedidasTable rows={orcamentos} loading={orcamentosLoading} />
           </>
         )}
       </main>
