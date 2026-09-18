@@ -15,7 +15,7 @@ const CORES_RANKING = [
 ];
 const COR_OUTROS = '#898781';
 
-function montarDados(linhas, topN) {
+function montarDados(linhas) {
   const porMes = new Map();
   linhas.forEach((linha) => {
     if (!porMes.has(linha.MES)) porMes.set(linha.MES, []);
@@ -74,7 +74,7 @@ export default function ProdutividadeBarChart({ titulo, linhas, topN, loading })
   }
 
   const mesAtual = new Date().toISOString().slice(0, 7);
-  const dados = montarDados(linhas, topN);
+  const dados = montarDados(linhas);
   const temMesAtual = dados.some((d) => d.mes === mesAtual);
   const chaves = [...Array.from({ length: topN }, (_, i) => `rank${i + 1}`), 'outros'];
 

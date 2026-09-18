@@ -31,10 +31,10 @@ seguir.
 
 ### 3. Transformar `docs/` no repositório local desse projeto
 
-No terminal:
+No terminal (troque o caminho pelo da sua cópia do projeto):
 
 ```
-cd "c:\Users\c057396\OneDrive - CEMIG\NovosPython\ConexaoMT\docs"
+cd "<caminho-da-sua-copia-do-projeto>\docs"
 git init
 git branch -M main
 git remote add origin https://github.com/SEU-USUARIO/historico-medidas-publico.git
