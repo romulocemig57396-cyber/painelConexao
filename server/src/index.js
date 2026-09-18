@@ -4,7 +4,6 @@ const cors = require('cors');
 const config = require('./config');
 const medidasRouter = require('./routes/medidas');
 const healthRouter = require('./routes/health');
-const debugRouter = require('./routes/debug');
 const ultimaAtualizacaoRouter = require('./routes/ultimaAtualizacao');
 const inconsistenciasRouter = require('./routes/inconsistencias');
 const historicoRouter = require('./routes/historico');
@@ -19,7 +18,6 @@ app.use(express.json());
 // o SQL Server, use GET /api/health/db.
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api', healthRouter);
-app.use('/api', debugRouter);
 app.use('/api', ultimaAtualizacaoRouter);
 app.use('/api', inconsistenciasRouter);
 app.use('/api', historicoRouter);
