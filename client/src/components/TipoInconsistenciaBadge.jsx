@@ -3,6 +3,7 @@ const VARIANTE_POR_TIPO = {
   '0019/0032 concluída sem andamento': 'soon',
   '0020/0021 concluída sem andamento': 'blue',
   '0080/0086 concluída sem andamento': 'violet',
+  '0080 pendente sem medida 0070': 'ontime',
 };
 
 export default function TipoInconsistenciaBadge({ tipo }) {

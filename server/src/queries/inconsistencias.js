@@ -16,7 +16,7 @@ function buildExclusaoStatusNota(request, palavras) {
 }
 
 /**
- * Replica a query de inconsistências validada no DBeaver (6 tipos, 9 blocos
+ * Replica a query de inconsistências validada no DBeaver (7 tipos, 10 blocos
  * UNION ALL) com os valores de listas vindos de config.regrasInconsistencias
  * em vez de hardcoded. A estrutura (quais medidas disparam cada tipo, qual
  * cadeia de "andamento" cada uma checa) permanece fixa — é a identidade de
@@ -187,6 +187,17 @@ async function buscarInconsistencias(pool) {
             AND M.DAT_SOLIC >= M2.DAT_SOLIC
             AND M2.COD_MEDIDA IN (${tipo6PendenteInClause})
             AND ${tipo6PendenteStatus}
+      )
+
+    UNION ALL
+    SELECT
+        '0080 pendente sem medida 0070',${colunas}
+    FROM TBL_MEDIDAS M
+    INNER JOIN TBL_NOTAS N ON M.NUM_NOTA = N.NUM_NOTA
+    WHERE M.COD_MEDIDA = '0080' AND M.COD_STAT_USU IN (${statusPendenteInClause})${filtroBase}
+      AND NOT EXISTS (
+          SELECT 1 FROM TBL_MEDIDAS M2
+          WHERE M2.NUM_NOTA = M.NUM_NOTA AND M2.COD_MEDIDA = '0070'
       )
     ) X
     WHERE X.COD_SERVICO IN (${servicoInClause})
