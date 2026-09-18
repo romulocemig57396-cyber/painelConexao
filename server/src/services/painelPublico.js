@@ -27,48 +27,13 @@ function executar(comando, args, cwd, env = process.env) {
   });
 }
 
+// Site estático (GitHub Pages) aposentado — o painel externo agora mora no
+// Portal Conexão MT (server/scripts/exportarPainelExterno.js faz o POST via
+// HTTP), então não tem mais git/PUBLIC_REPO_DIR/docs envolvido nesse fluxo.
 async function atualizar() {
   const raiz = path.join(__dirname, '..', '..', '..');
-  const docs = path.resolve(process.env.PUBLIC_REPO_DIR || path.join(raiz, 'docs'));
-  const script = path.join(raiz, 'server', 'scripts', 'exportarHistoricoEstatico.js');
-
-  try {
-    await executar('git', ['rev-parse', '--show-toplevel'], docs);
-  } catch (error) {
-    throw new Error(
-      `Repositório do painel público não encontrado em "${docs}". ` +
-        'Configure PUBLIC_REPO_DIR no server/.env apontando para o clone do painel público. ' +
-        `Detalhe: ${error.message}`,
-      { cause: error },
-    );
-  }
-
-  await executar(process.execPath, [script], raiz, {
-    ...process.env,
-    PUBLIC_DATA_PATH: path.join(docs, 'data', 'historico.json'),
-  });
-  await executar('git', ['pull', '--ff-only'], docs);
-  await executar('git', ['add', 'data/historico.json'], docs);
-
-  const diff = await executar('git', ['diff', '--cached', '--quiet'], docs)
-    .then(() => false)
-    .catch((error) => {
-      if (error.code === 1) return true;
-      throw error;
-    });
-
-  if (!diff) return;
-
-  await executar(
-    'git',
-    [
-      'commit',
-      '-m',
-      `Atualizacao automatica dos dados - ${new Date().toLocaleString('pt-BR')}`,
-    ],
-    docs,
-  );
-  await executar('git', ['push'], docs);
+  const script = path.join(raiz, 'server', 'scripts', 'exportarPainelExterno.js');
+  await executar(process.execPath, [script], raiz);
 }
 
 function iniciar() {

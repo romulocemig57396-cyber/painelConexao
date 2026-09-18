@@ -68,4 +68,56 @@ async function buscarHistoricoUniversalizacao(pool, filtros = {}) {
   return result.recordset;
 }
 
-module.exports = { buscarHistoricoUniversalizacao };
+/**
+ * Versão sem filtro pra exportação (ver comentário equivalente em
+ * historicoAprovacao.js) — agrupa também por serviço/mercado/regional em vez
+ * de só somar dentro do recorte pedido.
+ */
+async function buscarHistoricoUniversalizacaoGranular(pool) {
+  const { statusCancelado, servicosDisponiveis, dataMinima, universalizacao } = config.regrasHistorico;
+  const { universalizadaCodigos, naoUniversalizadaCodigos, foraUniversalizacaoCodigos, segurancaCodigos } = universalizacao;
+
+  const request = pool.request();
+  request.input('dataMinima', sql.Date, new Date(dataMinima));
+  const medComObrasCase = medidaCasePorServico(
+    'N.COD_SERVICO', request, 'comObras', 'comObras', MAPEAMENTO_MEDIDA_POR_SERVICO,
+  );
+  const universalizadaInClause = inClauseParams(request, 'univ_', universalizadaCodigos);
+  const naoUniversalizadaInClause = inClauseParams(request, 'naoUniv_', naoUniversalizadaCodigos);
+  const foraUniversalizacaoInClause = inClauseParams(request, 'foraUniv_', foraUniversalizacaoCodigos);
+  const segurancaInClause = inClauseParams(request, 'seg_', segurancaCodigos);
+  const servicoInClause = inClauseParams(request, 'sv_', servicosDisponiveis);
+  const condNaoCancelado = campoNaoContemPalavra('M.COD_STAT_USU', request, 'stCanc', statusCancelado);
+
+  const query = `
+    SELECT MES, SERVICO, MERCADO, REGIONAL, CATEGORIA, COUNT(*) AS QTD
+    FROM (
+        SELECT
+            FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
+            N.COD_SERVICO AS SERVICO,
+            N.DES_MERCADO AS MERCADO,
+            L.COD_SP AS REGIONAL,
+            CASE
+                WHEN N.COD_UNIVERSALIZACAO IN (${universalizadaInClause}) THEN 'UNIVERSALIZADA'
+                WHEN N.COD_UNIVERSALIZACAO IN (${naoUniversalizadaInClause}) THEN 'NAO_UNIVERSALIZADA'
+                WHEN N.COD_UNIVERSALIZACAO IN (${foraUniversalizacaoInClause}) THEN 'FORA_UNIVERSALIZACAO'
+                WHEN N.COD_UNIVERSALIZACAO IN (${segurancaInClause}) THEN 'SEGURANCA'
+                ELSE 'OUTROS'
+            END AS CATEGORIA
+        FROM TBL_MEDIDAS M
+        INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
+        INNER JOIN TBL_LOCAIS L ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
+        WHERE M.COD_MEDIDA = ${medComObrasCase}
+          AND N.COD_SERVICO IN (${servicoInClause})
+          AND M.DAT_TREAL >= @dataMinima
+          AND ${condNaoCancelado}
+    ) X
+    GROUP BY MES, SERVICO, MERCADO, REGIONAL, CATEGORIA
+    ORDER BY MES, SERVICO, MERCADO, REGIONAL, CATEGORIA;
+  `;
+
+  const result = await request.query(query);
+  return result.recordset;
+}
+
+module.exports = { buscarHistoricoUniversalizacao, buscarHistoricoUniversalizacaoGranular };
