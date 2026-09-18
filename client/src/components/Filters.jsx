@@ -10,6 +10,9 @@ export default function Filters({
   medidasGrupo1,
   medidasSelecionadas,
   onMedidasChange,
+  situacoesVencimento,
+  situacoesSelecionadas,
+  onSituacoesChange,
   cardFiltroAtivo,
   onLimpar,
 }) {
@@ -17,6 +20,7 @@ export default function Filters({
     servicosSelecionados.length !== servicos.length ||
     regionaisSelecionadas.length !== regionais.length ||
     medidasSelecionadas.length !== medidasGrupo1.length ||
+    situacoesSelecionadas.length !== situacoesVencimento.length ||
     cardFiltroAtivo;
 
   return (
@@ -40,6 +44,13 @@ export default function Filters({
         opcoes={medidasGrupo1}
         selecionadas={medidasSelecionadas}
         onChange={onMedidasChange}
+        wrapperClassName="filters-bar__field filters-bar__field--full"
+      />
+      <ChipMultiFilter
+        label="Status de vencimento"
+        opcoes={situacoesVencimento}
+        selecionadas={situacoesSelecionadas}
+        onChange={onSituacoesChange}
         wrapperClassName="filters-bar__field filters-bar__field--full"
       />
       {temFiltroAtivo && (

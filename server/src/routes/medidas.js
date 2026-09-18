@@ -48,8 +48,9 @@ router.get('/medidas', async (req, res) => {
     const medidasFiltro = parseListaFiltro(medidas);
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
+    const situacaoFiltro = parseListaFiltro(situacao);
     if ((medidasFiltro && medidasFiltro.length === 0) || (servicoFiltro && servicoFiltro.length === 0)
-      || (regionalFiltro && regionalFiltro.length === 0)) {
+      || (regionalFiltro && regionalFiltro.length === 0) || (situacaoFiltro && situacaoFiltro.length === 0)) {
       return res.json({ total: 0, regrasNegocio: config.regrasNegocio, data: [] });
     }
 
@@ -60,7 +61,7 @@ router.get('/medidas', async (req, res) => {
       medidas: medidasFiltro,
       servico: servicoFiltro,
       regional: regionalFiltro,
-      situacao,
+      situacao: situacaoFiltro,
       grupo2: grupo2 === 'SIM',
     });
 
@@ -88,8 +89,9 @@ router.get('/medidas/resumo', async (req, res) => {
     const medidasFiltro = parseListaFiltro(medidas);
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
+    const situacaoFiltro = parseListaFiltro(situacao);
     if ((medidasFiltro && medidasFiltro.length === 0) || (servicoFiltro && servicoFiltro.length === 0)
-      || (regionalFiltro && regionalFiltro.length === 0)) {
+      || (regionalFiltro && regionalFiltro.length === 0) || (situacaoFiltro && situacaoFiltro.length === 0)) {
       return res.json({ regrasNegocio: config.regrasNegocio, data: [] });
     }
 
@@ -100,7 +102,7 @@ router.get('/medidas/resumo', async (req, res) => {
       medidas: medidasFiltro,
       servico: servicoFiltro,
       regional: regionalFiltro,
-      situacao,
+      situacao: situacaoFiltro,
       grupo2: grupo2 === 'SIM',
     });
 

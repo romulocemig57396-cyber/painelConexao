@@ -28,6 +28,8 @@ async function buscarMedidasPendentes(pool, filtros = {}) {
   const statusInClause = inClauseParams(request, 'st_', statusPendente);
   const servicoInClause = inClauseParams(request, 'sv_', codServicoFiltro);
   const regionalInClause = regionais ? inClauseParams(request, 'rg_', regionais) : null;
+  const situacoes = filtros.situacao?.length ? filtros.situacao : null;
+  const situacaoInClause = situacoes ? inClauseParams(request, 'sit_', situacoes) : null;
 
   let extraWhere = '';
   if (filtros.area) {
@@ -38,9 +40,8 @@ async function buscarMedidasPendentes(pool, filtros = {}) {
     request.input('filtroStatus', sql.NVarChar, filtros.status);
     extraWhere += ' AND M.COD_STAT_USU = @filtroStatus';
   }
-  if (filtros.situacao) {
-    request.input('filtroSituacao', sql.NVarChar, filtros.situacao);
-  extraWhere += ` AND ${SITUACAO_REGULATORIA} = @filtroSituacao`;
+  if (situacaoInClause) {
+    extraWhere += ` AND ${SITUACAO_REGULATORIA} IN (${situacaoInClause})`;
   }
   // "Com pendência grupo 2" reaproveita o mesmo P (LEFT JOIN) já usado pra
   // calcular TEM_PENDENCIA_GRUPO2 — atalho do card de métrica.

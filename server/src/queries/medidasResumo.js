@@ -28,6 +28,8 @@ async function buscarResumoMedidas(pool, filtros = {}) {
   const statusInClause = inClauseParams(request, 'st_', statusPendente);
   const servicoInClause = inClauseParams(request, 'sv_', codServicoFiltro);
   const regionalInClause = regionais ? inClauseParams(request, 'rg_', regionais) : null;
+  const situacoes = filtros.situacao?.length ? filtros.situacao : null;
+  const situacaoInClause = situacoes ? inClauseParams(request, 'sit_', situacoes) : null;
 
   let extraWhere = '';
   if (filtros.area) {
@@ -38,9 +40,8 @@ async function buscarResumoMedidas(pool, filtros = {}) {
     request.input('filtroStatus', sql.NVarChar, filtros.status);
     extraWhere += ' AND M.COD_STAT_USU = @filtroStatus';
   }
-  if (filtros.situacao) {
-    request.input('filtroSituacao', sql.NVarChar, filtros.situacao);
-    extraWhere += ' AND M.DES_SITUACAO = @filtroSituacao';
+  if (situacaoInClause) {
+    extraWhere += ` AND ${SITUACAO_REGULATORIA} IN (${situacaoInClause})`;
   }
   if (filtros.grupo2) {
     extraWhere += ' AND P.MEDIDAS_PENDENTES IS NOT NULL';

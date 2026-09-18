@@ -64,6 +64,7 @@ export default function App() {
   const [medidasGrupo2, setMedidasGrupo2] = useState([]);
   const [medidasSelecionadas, setMedidasSelecionadas] = useState([]);
   const [medidasInicializado, setMedidasInicializado] = useState(false);
+  const [situacoesSelecionadas, setSituacoesSelecionadas] = useState(SITUACOES_VENCIMENTO);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
   const [abaAtiva, setAbaAtiva] = useState('lista');
   // Filtro de medida disparado pelos cards de métrica.
@@ -110,6 +111,7 @@ export default function App() {
     setServicosSelecionados(servicos);
     setRegionaisSelecionadas(regionais);
     setMedidasSelecionadas(medidasGrupo1);
+    setSituacoesSelecionadas(SITUACOES_VENCIMENTO);
     setCardFiltroAtivo(null);
   }
 
@@ -119,33 +121,33 @@ export default function App() {
       setMedidasSelecionadas(medidasGrupo1);
       return;
     }
-
-    async function atualizarPainelPublico() {
-      if (!window.confirm('Atualizar os dados do painel externo agora?')) return;
-      try {
-        const resp = await fetch('/api/painel-publico/atualizar', { method: 'POST' });
-        const json = await resp.json();
-        if (!resp.ok) throw new Error(json.error || 'Não foi possível iniciar a atualização.');
-        setAtualizacaoPublica(json.data);
-      } catch (err) {
-        setAtualizacaoPublica({ status: 'error', error: err.message });
-      }
-    }
-
-    useEffect(() => {
-      if (atualizacaoPublica.status !== 'running') return undefined;
-      const timer = window.setInterval(async () => {
-        const resp = await fetch('/api/painel-publico/atualizacao');
-        if (!resp.ok) return;
-        const json = await resp.json();
-        setAtualizacaoPublica(json.data);
-        if (json.data.status !== 'running') window.clearInterval(timer);
-      }, 3000);
-      return () => window.clearInterval(timer);
-    }, [atualizacaoPublica.status]);
     setCardFiltroAtivo(filterKey);
     setMedidasSelecionadas(medidasDoCard);
   }
+
+  async function atualizarPainelPublico() {
+    if (!window.confirm('Atualizar os dados do painel externo agora?')) return;
+    try {
+      const resp = await fetch('/api/painel-publico/atualizar', { method: 'POST' });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.error || 'Não foi possível iniciar a atualização.');
+      setAtualizacaoPublica(json.data);
+    } catch (err) {
+      setAtualizacaoPublica({ status: 'error', error: err.message });
+    }
+  }
+
+  useEffect(() => {
+    if (atualizacaoPublica.status !== 'running') return undefined;
+    const timer = window.setInterval(async () => {
+      const resp = await fetch('/api/painel-publico/atualizacao');
+      if (!resp.ok) return;
+      const json = await resp.json();
+      setAtualizacaoPublica(json.data);
+      if (json.data.status !== 'running') window.clearInterval(timer);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [atualizacaoPublica.status]);
 
   async function carregarDados() {
     setLoading(true);
@@ -164,6 +166,9 @@ export default function App() {
         params.set('medidas', medidasSelecionadas.join(','));
       }
       // Atalhos dos cards de métrica — combinam com os filtros acima (AND no backend).
+      if (situacoesSelecionadas.length !== SITUACOES_VENCIMENTO.length) {
+        params.set('situacao', situacoesSelecionadas.join(','));
+      }
       if (cardFiltroAtivo === 'atraso') params.set('situacao', 'EM ATRASO');
       if (cardFiltroAtivo === 'grupo2') params.set('grupo2', 'SIM');
       const qs = params.toString();
@@ -230,7 +235,7 @@ export default function App() {
   useEffect(() => {
     carregarDados();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [medidasSelecionadas, servicosSelecionados, regionaisSelecionadas, cardFiltroAtivo]);
+  }, [medidasSelecionadas, servicosSelecionados, regionaisSelecionadas, situacoesSelecionadas, cardFiltroAtivo]);
 
   useEffect(() => {
     async function carregarOpcoes() {
@@ -383,6 +388,9 @@ export default function App() {
       medidasGrupo1={medidasGrupo1}
       medidasSelecionadas={medidasSelecionadas}
       onMedidasChange={setMedidasSelecionadas}
+      situacoesVencimento={SITUACOES_VENCIMENTO}
+      situacoesSelecionadas={situacoesSelecionadas}
+      onSituacoesChange={setSituacoesSelecionadas}
       cardFiltroAtivo={cardFiltroAtivo}
       onLimpar={limparFiltros}
       />
