@@ -80,6 +80,16 @@ Esse recurso depende de o processo do painel ter acesso ao `node`, ao `git` e
 ou pelo Agendador de Tarefas, configure esses executáveis e a autenticação no
 ambiente desse processo, não apenas no terminal interativo do usuário.
 
+Quando o projeto principal usa `docs/` como submódulo ou quando o clone do
+painel público fica em outra pasta, configure também no `server/.env`:
+
+```env
+PUBLIC_REPO_DIR=C:\caminho\para\o\clone\do\painel-publico
+```
+
+O botão valida esse diretório antes de consultar o banco e informa o caminho
+esperado se o repositório não estiver disponível.
+
 ## Conteúdo exportado
 
 O JSON contém o Histórico agregado por mês, serviço, mercado e Regional, além

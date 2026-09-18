@@ -19,6 +19,7 @@ const config = {
     password: process.env.DB_PWD,
     encrypt: process.env.DB_ENCRYPT === 'true',
     trustServerCertificate: process.env.DB_TRUST_CERT !== 'false',
+    requestTimeout: Number(process.env.DB_REQUEST_TIMEOUT) || 120000,
   },
   port: Number(process.env.PORT) || 3001,
   regrasNegocio: {

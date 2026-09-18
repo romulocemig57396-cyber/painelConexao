@@ -7,7 +7,9 @@ const { buscarHistoricoLiberacao } = require('../src/queries/historicoLiberacao'
 const { buscarHistoricoUniversalizacao } = require('../src/queries/historicoUniversalizacao');
 const { buscarResumoMedidasPublico } = require('../src/queries/medidasPublicoResumo');
 
-const SAIDA = path.join(__dirname, '..', '..', 'docs', 'data', 'historico.json');
+const SAIDA = process.env.PUBLIC_DATA_PATH
+  ? path.resolve(process.env.PUBLIC_DATA_PATH)
+  : path.join(__dirname, '..', '..', 'docs', 'data', 'historico.json');
 
 // Os 12 códigos habilitados no filtro (client/src/App.jsx SERVICOS_HISTORICO /
 // server/src/config.js regrasHistorico.servicosDisponiveis). Cada um é

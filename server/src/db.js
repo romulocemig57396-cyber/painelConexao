@@ -21,7 +21,7 @@ const sqlConfig = {
     trustServerCertificate: config.db.trustServerCertificate,
   },
   connectionTimeout: 30000,
-  requestTimeout: 120000,
+  requestTimeout: config.db.requestTimeout,
   pool: {
     max: 10,
     min: 0,

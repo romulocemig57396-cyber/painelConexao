@@ -9,9 +9,14 @@ let job = {
   error: null,
 };
 
-function executar(comando, args, cwd) {
+function executar(comando, args, cwd, env = process.env) {
   return new Promise((resolve, reject) => {
-    execFile(comando, args, { cwd, windowsHide: true, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+    execFile(comando, args, {
+      cwd,
+      env,
+      windowsHide: true,
+      maxBuffer: 1024 * 1024,
+    }, (error, stdout, stderr) => {
       if (error) {
         const detalhe = (stderr || stdout || error.message).trim();
         error.message = detalhe;
@@ -25,10 +30,22 @@ function executar(comando, args, cwd) {
 
 async function atualizar() {
   const raiz = path.join(__dirname, '..', '..', '..');
-  const docs = path.join(raiz, 'docs');
+  const docs = path.resolve(process.env.PUBLIC_REPO_DIR || path.join(raiz, 'docs'));
   const script = path.join(raiz, 'server', 'scripts', 'exportarHistoricoEstatico.js');
 
-  await executar(process.execPath, [script], raiz);
+  try {
+    await executar('git', ['rev-parse', '--show-toplevel'], docs);
+  } catch (error) {
+    throw new Error(
+      `Repositório do painel público não encontrado em "${docs}". ` +
+        'Configure PUBLIC_REPO_DIR no server/.env apontando para o clone do painel público.',
+    );
+  }
+
+  await executar(process.execPath, [script], raiz, {
+    ...process.env,
+    PUBLIC_DATA_PATH: path.join(docs, 'data', 'historico.json'),
+  });
   await executar('git', ['pull', '--ff-only'], docs);
   await executar('git', ['add', 'data/historico.json'], docs);
 
