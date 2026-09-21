@@ -115,19 +115,30 @@ async function main() {
         `${inconsistenciasPayload.length} inconsistências e ${orcamentosPayload.length} orçamentos emitíveis...`,
     );
 
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        historico,
-        medidas: medidasPayload,
-        inconsistencias: inconsistenciasPayload,
-        orcamentosEmitiveis: orcamentosPayload,
-      }),
+    const corpoRequisicao = JSON.stringify({
+      historico,
+      medidas: medidasPayload,
+      inconsistencias: inconsistenciasPayload,
+      orcamentosEmitiveis: orcamentosPayload,
     });
+    console.log(`Tamanho do corpo da requisição: ${(corpoRequisicao.length / 1024 / 1024).toFixed(2)} MB`);
+
+    let resp;
+    try {
+      resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: corpoRequisicao,
+      });
+    } catch (err) {
+      // fetch() só lança um TypeError raso ("fetch failed"); a causa real
+      // (DNS, timeout, conexão recusada/resetada) vem em err.cause.
+      const causa = err.cause ? ` — causa: ${err.cause.code || err.cause.message || err.cause}` : '';
+      throw new Error(`${err.message}${causa}`, { cause: err });
+    }
 
     if (!resp.ok) {
       const corpo = await resp.text().catch(() => '');
