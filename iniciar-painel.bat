@@ -2,6 +2,15 @@
 setlocal
 cd /d "%~dp0"
 
+REM Se a rede corporativa intercepta TLS (proxy/firewall trocando o
+REM certificado por um da CA interna), o Node vai falhar com
+REM "UNABLE_TO_GET_ISSUER_CERT_LOCALLY" ao chamar o Portal Conexao MT via
+REM HTTPS (ex.: botao "Atualizar painel externo"). Se acontecer, exporte o
+REM certificado raiz da CA interna (certmgr.msc > Autoridades de Certificacao
+REM Raiz Confiaveis > Certificados > exportar como Base-64 X.509 .CER) e
+REM descomente a linha abaixo apontando pro arquivo:
+REM set "NODE_EXTRA_CA_CERTS=C:\certs\cemig-root-ca.pem"
+
 echo Iniciando o Painel de Medidas...
 start "Painel de Medidas - Servidor" cmd /k npm run prod
 

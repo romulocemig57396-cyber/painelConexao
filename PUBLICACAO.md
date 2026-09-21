@@ -33,6 +33,18 @@ PORTAL_PAINEL_EXTERNO_URL=https://portal-conexao-mt-production.up.railway.app/ap
 PORTAL_RESUMO_API_KEY=<mesma chave já usada pelo resumo diário>
 ```
 
+## Rede corporativa com inspeção de TLS
+
+Se o botão falhar com `fetch failed — causa: UNABLE_TO_GET_ISSUER_CERT_LOCALLY`
+(ou `SELF_SIGNED_CERT_IN_CHAIN`/`DEPTH_ZERO_SELF_SIGNED_CERT`), é o proxy/
+firewall da rede trocando o certificado HTTPS do Railway pelo de uma CA
+interna, que o Node não confia por padrão (mesmo o Windows já confiando nela
+via política de grupo). Resolve exportando o certificado raiz dessa CA
+(`certmgr.msc` → Autoridades de Certificação Raiz Confiáveis → Certificados →
+exportar como Base-64 X.509 `.CER`) e apontando `NODE_EXTRA_CA_CERTS` pra
+esse arquivo — já tem uma linha comentada pronta pra descomentar em
+`iniciar-painel.bat` e `atualizar_historico.bat`.
+
 ## Conteúdo exportado
 
 - **Histórico**: aprovação, liberação e universalização, quebrados por mês,
