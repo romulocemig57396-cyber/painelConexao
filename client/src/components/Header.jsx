@@ -22,7 +22,9 @@ export default function Header({ ultimaAtualizacao, atualizacaoPublica, onAtuali
             {atualizacaoPublica?.status === 'running' ? 'Atualizando painel externo…' : 'Atualizar painel externo'}
           </button>
           {atualizacaoPublica?.status === 'success' && <span>Atualizado com sucesso.</span>}
-          {atualizacaoPublica?.status === 'error' && <span>Falha ao atualizar o painel externo.</span>}
+          {atualizacaoPublica?.status === 'error' && (
+            <span>Falha ao atualizar o painel externo{atualizacaoPublica.error ? `: ${atualizacaoPublica.error}` : '.'}</span>
+          )}
         </div>
         {temAtualizacao && (
           <div className="app-header__atualizacao">
