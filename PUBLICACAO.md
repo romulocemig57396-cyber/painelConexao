@@ -2,7 +2,7 @@
 
 O painel externo deixou de ser um site estático no GitHub Pages — agora é uma
 página dentro do **Portal Conexão MT** (`portal-conexao-mt`, Next.js, hospedado
-na Vercel), com login próprio e um papel de usuário dedicado (`externo`) que só
+no Railway), com login próprio e um papel de usuário dedicado (`externo`) que só
 vê esse painel, nada do resto do Portal.
 
 Esse projeto (`painelConexao`) só manda os dados via HTTP; não guarda mais
@@ -14,7 +14,7 @@ ambiente do processo — só de `node` e de rede até o Portal.
 
 1. `server/scripts/exportarPainelExterno.js` consulta o banco (Histórico,
    Medidas agregadas, Inconsistências e Orçamentos Emitíveis) e faz
-   `POST https://portal-conexao-mt.vercel.app/api/painel-externo/atualizar`,
+   `POST https://portal-conexao-mt-production.up.railway.app/api/painel-externo/atualizar`,
    com o header `x-api-key` (mesma chave de `PORTAL_RESUMO_API_KEY`).
 2. O Portal substitui os 4 conjuntos de dados por completo (não acumula
    histórico de versões) e serve tudo pra quem tiver login com papel
@@ -29,7 +29,7 @@ Isso pode ser disparado de duas formas, com o mesmo efeito:
 ## Configuração necessária (`server/.env`)
 
 ```env
-PORTAL_PAINEL_EXTERNO_URL=https://portal-conexao-mt.vercel.app/api/painel-externo/atualizar
+PORTAL_PAINEL_EXTERNO_URL=https://portal-conexao-mt-production.up.railway.app/api/painel-externo/atualizar
 PORTAL_RESUMO_API_KEY=<mesma chave já usada pelo resumo diário>
 ```
 
