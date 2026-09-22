@@ -4,6 +4,7 @@ import MetricCards from './components/MetricCards.jsx';
 import Filters from './components/Filters.jsx';
 import Tabs from './components/Tabs.jsx';
 import MedidasTable from './components/MedidasTable.jsx';
+import SituacaoCards from './components/SituacaoCards.jsx';
 import MedidasBarChart from './components/MedidasBarChart.jsx';
 import ChipMultiFilter from './components/ChipMultiFilter.jsx';
 import InconsistenciasTable from './components/InconsistenciasTable.jsx';
@@ -119,6 +120,16 @@ export default function App() {
   const [orcamentosServicosSelecionados, setOrcamentosServicosSelecionados] = useState([]);
   const [orcamentosServicosInicializado, setOrcamentosServicosInicializado] = useState(false);
   const [orcamentosRegionaisSelecionadas, setOrcamentosRegionaisSelecionadas] = useState([]);
+  const [orcamentosSituacaoAtiva, setOrcamentosSituacaoAtiva] = useState(null);
+
+  function handleOrcamentosSituacaoClick(situacao) {
+    setOrcamentosSituacaoAtiva((atual) => (atual === situacao ? null : situacao));
+  }
+
+  const orcamentosFiltrados = useMemo(
+    () => (orcamentosSituacaoAtiva ? orcamentos.filter((row) => row.DES_SITUACAO === orcamentosSituacaoAtiva) : orcamentos),
+    [orcamentos, orcamentosSituacaoAtiva],
+  );
 
   function limparFiltros() {
     setServicosSelecionados(servicos);
@@ -636,7 +647,14 @@ export default function App() {
               />
             </section>
             {orcamentosError && <div className="error-banner">Erro ao carregar dados: {orcamentosError}</div>}
-            <MedidasTable rows={orcamentos} loading={orcamentosLoading} />
+            {!orcamentosLoading && (
+              <SituacaoCards
+                rows={orcamentos}
+                situacaoAtiva={orcamentosSituacaoAtiva}
+                onSituacaoClick={handleOrcamentosSituacaoClick}
+              />
+            )}
+            <MedidasTable rows={orcamentosFiltrados} loading={orcamentosLoading} />
           </>
         )}
       </main>
