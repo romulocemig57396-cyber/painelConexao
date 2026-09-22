@@ -35,15 +35,24 @@ PORTAL_RESUMO_API_KEY=<mesma chave já usada pelo resumo diário>
 
 ## Rede corporativa com inspeção de TLS
 
-Se o botão falhar com `fetch failed — causa: UNABLE_TO_GET_ISSUER_CERT_LOCALLY`
-(ou `SELF_SIGNED_CERT_IN_CHAIN`/`DEPTH_ZERO_SELF_SIGNED_CERT`), é o proxy/
-firewall da rede trocando o certificado HTTPS do Railway pelo de uma CA
-interna, que o Node não confia por padrão (mesmo o Windows já confiando nela
-via política de grupo). Resolve exportando o certificado raiz dessa CA
-(`certmgr.msc` → Autoridades de Certificação Raiz Confiáveis → Certificados →
-exportar como Base-64 X.509 `.CER`) e apontando `NODE_EXTRA_CA_CERTS` pra
-esse arquivo — já tem uma linha comentada pronta pra descomentar em
-`iniciar-painel.bat` e `atualizar_historico.bat`.
+A rede da Cemig intercepta HTTPS (proxy/firewall trocando o certificado pelo
+de uma CA interna). O Windows já confia nela via política de domínio — por
+isso `git push`/Chrome nunca reclamaram — mas o `fetch()` do Node usa sua
+própria lista de certificados, sem essa CA, e falhava com `fetch failed —
+causa: UNABLE_TO_GET_ISSUER_CERT_LOCALLY`.
+
+`server/src/confiarCertificadosWindows.js` resolve isso automaticamente: lê a
+store de certificados confiáveis do Windows (via `win-ca`) e injeta no Node
+em tempo de execução, sem precisar exportar nada nem configurar variável de
+ambiente — é exigido no topo de `exportarPainelExterno.js` e
+`resumo-diario.js`. Em qualquer outra rede/SO ele não faz nada.
+
+Se mesmo assim aparecer o mesmo erro (rede muito restritiva bloqueando a
+leitura da store do Windows), o contorno manual ainda existe: exportar o
+certificado raiz da CA interna (`certmgr.msc` → Autoridades de Certificação
+Raiz Confiáveis → Certificados → exportar como Base-64 X.509 `.CER`) e
+apontar `NODE_EXTRA_CA_CERTS` pra esse arquivo — tem uma linha comentada
+pronta pra descomentar em `iniciar-painel.bat` e `atualizar_historico.bat`.
 
 ## Conteúdo exportado
 

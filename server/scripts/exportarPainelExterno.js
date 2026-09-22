@@ -1,3 +1,4 @@
+require('../src/confiarCertificadosWindows');
 const { getPool } = require('../src/db');
 const { buscarHistoricoAprovacaoGranular } = require('../src/queries/historicoAprovacao');
 const { buscarHistoricoLiberacaoGranular } = require('../src/queries/historicoLiberacao');

@@ -1,3 +1,4 @@
+require('../src/confiarCertificadosWindows');
 const path = require('path');
 const fs = require('fs');
 const { getPool } = require('../src/db');
