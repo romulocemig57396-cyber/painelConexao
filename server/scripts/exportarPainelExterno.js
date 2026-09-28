@@ -6,6 +6,7 @@ const { buscarHistoricoUniversalizacaoGranular } = require('../src/queries/histo
 const { buscarResumoMedidasPublico } = require('../src/queries/medidasPublicoResumo');
 const { buscarInconsistencias } = require('../src/queries/inconsistencias');
 const { buscarOrcamentosEmitiveis } = require('../src/queries/orcamentosEmitiveis');
+const { buscarResumoMedida0070RegionalGranular } = require('../src/queries/medida0070RegionalResumo');
 
 // Substitui o antigo exportarHistoricoEstatico.js (site estático no GitHub
 // Pages): em vez de escrever docs/data/historico.json, este script consulta
@@ -31,9 +32,10 @@ async function main() {
       buscarHistoricoUniversalizacaoGranular(pool),
     ]);
 
-    console.log('Consultando medidas agregadas, inconsistências e orçamentos emitíveis...');
-    const [medidas, inconsistencias, orcamentosEmitiveis] = await Promise.all([
+    console.log('Consultando medidas agregadas, medida 0070 por regional, inconsistências e orçamentos emitíveis...');
+    const [medidas, medida0070Regional, inconsistencias, orcamentosEmitiveis] = await Promise.all([
       buscarResumoMedidasPublico(pool),
+      buscarResumoMedida0070RegionalGranular(pool),
       buscarInconsistencias(pool),
       buscarOrcamentosEmitiveis(pool),
     ]);
@@ -78,6 +80,13 @@ async function main() {
       quantidade: r.QUANTIDADE,
     }));
 
+    const medida0070RegionalPayload = medida0070Regional.map((r) => ({
+      servico: r.SERVICO,
+      regional: r.REGIONAL,
+      situacao: r.DES_SITUACAO,
+      quantidade: r.QUANTIDADE,
+    }));
+
     const inconsistenciasPayload = inconsistencias.map((r) => ({
       tipo: r.TIPO_INCONSISTENCIA,
       numNota: r.NUM_NOTA,
@@ -113,12 +122,14 @@ async function main() {
 
     console.log(
       `Enviando ${historico.length} linhas de histórico, ${medidasPayload.length} de medidas, ` +
-        `${inconsistenciasPayload.length} inconsistências e ${orcamentosPayload.length} orçamentos emitíveis...`,
+        `${medida0070RegionalPayload.length} de medida 0070 por regional, ${inconsistenciasPayload.length} ` +
+        `inconsistências e ${orcamentosPayload.length} orçamentos emitíveis...`,
     );
 
     const corpoRequisicao = JSON.stringify({
       historico,
       medidas: medidasPayload,
+      medida0070Regional: medida0070RegionalPayload,
       inconsistencias: inconsistenciasPayload,
       orcamentosEmitiveis: orcamentosPayload,
     });
