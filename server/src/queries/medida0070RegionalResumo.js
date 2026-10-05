@@ -1,6 +1,19 @@
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
-const { SITUACAO_MEDIDA } = require('./regulatorio');
+
+// Prazo da medida 0070 deixou de vir direto de M.DES_SITUACAO (texto livre
+// do SAP, sem data de vencimento de verdade) e passa a ser calculado: 15
+// dias corridos a partir da criação da medida (M.DAT_SOLIC), nas mesmas 4
+// categorias de prazo usadas no resto do painel (EM ATRASO/VENCE HOJE/
+// VENCE 7 DIAS/NO PRAZO) — mesmo estilo de regulatorio.js:SITUACAO_REGULATORIA.
+const SITUACAO_PRAZO_0070 = `
+    CASE
+        WHEN M.DAT_SOLIC IS NULL THEN 'SEM VENCIMENTO REGULATÓRIO'
+        WHEN DATEDIFF(DAY, CAST(GETDATE() AS date), CAST(DATEADD(DAY, 15, M.DAT_SOLIC) AS date)) < 0 THEN 'EM ATRASO'
+        WHEN DATEDIFF(DAY, CAST(GETDATE() AS date), CAST(DATEADD(DAY, 15, M.DAT_SOLIC) AS date)) = 0 THEN 'VENCE HOJE'
+        WHEN DATEDIFF(DAY, CAST(GETDATE() AS date), CAST(DATEADD(DAY, 15, M.DAT_SOLIC) AS date)) <= 7 THEN 'VENCE 7 DIAS'
+        ELSE 'NO PRAZO'
+    END`;
 
 async function buscarResumoMedida0070Regional(pool, filtros = {}) {
   const { grupo1Medidas, statusPendente, codServicoFiltro: servicosPadrao } = config.regrasNegocio;
@@ -18,7 +31,7 @@ async function buscarResumoMedida0070Regional(pool, filtros = {}) {
   const query = `
     SELECT
         L.COD_SP AS REGIONAL,
-        ${SITUACAO_MEDIDA} AS DES_SITUACAO,
+        ${SITUACAO_PRAZO_0070} AS DES_SITUACAO,
         COUNT(*) AS QUANTIDADE
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N ON M.NUM_NOTA = N.NUM_NOTA
@@ -35,7 +48,7 @@ async function buscarResumoMedida0070Regional(pool, filtros = {}) {
           AND M1.COD_STAT_USU IN (${statusInClause})
       )
       ${filtrosExtras}
-    GROUP BY L.COD_SP, ${SITUACAO_MEDIDA}
+    GROUP BY L.COD_SP, ${SITUACAO_PRAZO_0070}
     ORDER BY REGIONAL, DES_SITUACAO;
   `;
 
@@ -56,7 +69,7 @@ async function buscarResumoMedida0070RegionalGranular(pool) {
     SELECT
         N.COD_SERVICO AS SERVICO,
         L.COD_SP AS REGIONAL,
-        ${SITUACAO_MEDIDA} AS DES_SITUACAO,
+        ${SITUACAO_PRAZO_0070} AS DES_SITUACAO,
         COUNT(*) AS QUANTIDADE
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N ON M.NUM_NOTA = N.NUM_NOTA
@@ -72,7 +85,7 @@ async function buscarResumoMedida0070RegionalGranular(pool) {
           AND M1.COD_MEDIDA IN (${grupo1InClause})
           AND M1.COD_STAT_USU IN (${statusInClause})
       )
-    GROUP BY N.COD_SERVICO, L.COD_SP, ${SITUACAO_MEDIDA}
+    GROUP BY N.COD_SERVICO, L.COD_SP, ${SITUACAO_PRAZO_0070}
     ORDER BY SERVICO, REGIONAL, DES_SITUACAO;
   `;
 
