@@ -29,6 +29,7 @@ async function buscarInconsistencias(pool) {
     statusNotaExcluir,
     statusPendente,
     tipo1Medidas,
+    tipo1StatusValidos,
     cadeia0019Resposta,
     cadeia0032Resposta,
     statusMedidaCancelada,
@@ -47,6 +48,10 @@ async function buscarInconsistencias(pool) {
   const cadeia0019InClause = inClauseParams(request, 'c19_', cadeia0019Resposta);
   const cadeia0032InClause = inClauseParams(request, 'c32_', cadeia0032Resposta);
   const servicoInClause = inClauseParams(request, 'sv_', codServicoFiltro);
+
+  // Tipo 1: medida de resposta só é "devida" em ENCE ou CONC — qualquer outro
+  // status (ABER/ANDM pendente, CANC, ou qualquer outro) é indevido.
+  const tipo1StatusValidosInClause = inClauseParams(request, 't1v_', tipo1StatusValidos);
 
   // Tipos 5/6: resposta dada (medida não cancelada) mas a medida-alvo
   // correspondente ainda pendente (ABER/ANDM) — checagens sempre por palavra
@@ -83,7 +88,7 @@ async function buscarInconsistencias(pool) {
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N ON M.NUM_NOTA = N.NUM_NOTA
     WHERE M.COD_MEDIDA IN (${tipo1MedidasInClause})
-      AND M.COD_STAT_USU IN (${statusPendenteInClause})${filtroBase}
+      AND M.COD_STAT_USU NOT IN (${tipo1StatusValidosInClause})${filtroBase}
 
     UNION ALL
     SELECT

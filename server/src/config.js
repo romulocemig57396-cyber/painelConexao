@@ -84,6 +84,9 @@ const config = {
     statusPendente: parseList(process.env.INC_STATUS_PENDENTE, ['ABER', 'ANDM']),
     // Tipo 1: "Medidas de resposta com status indevido".
     tipo1Medidas: parseList(process.env.INC_TIPO1_MEDIDAS, ['0550', '0501', '0590', '0595', '0596']),
+    // Únicos status "devidos" pra essas medidas de resposta — qualquer outro
+    // status (pendente, cancelada, etc.) conta como inconsistência.
+    tipo1StatusValidos: parseList(process.env.INC_TIPO1_STATUS_VALIDOS, ['ENCE', 'CONC']),
     // Medidas de resposta da cadeia 0019 → 0020 → 0080 (reaproveitadas nos tipos 2/3/4).
     cadeia0019Resposta: parseList(process.env.INC_CADEIA_0019_RESPOSTA, ['0550', '0501', '0554', '0590']),
     // Medidas de resposta da cadeia 0032 → 0021 → 0086 (reaproveitadas nos tipos 2/3/4).
