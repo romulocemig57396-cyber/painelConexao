@@ -31,6 +31,27 @@ const SITUACAO_REGULATORIA = `
 
 const SITUACAO_MEDIDA = 'M.DES_SITUACAO';
 
+// Prazo da medida 0070 deixou de vir direto de M.DES_SITUACAO (texto livre do
+// SAP, sem data de vencimento de verdade) e passa a ser calculado: 15 dias
+// corridos a partir da criação da medida (M.DAT_SOLIC), nas mesmas 4
+// categorias de prazo do resto do painel — mesmo estilo de SITUACAO_REGULATORIA.
+const SITUACAO_PRAZO_0070 = `
+    CASE
+        WHEN M.DAT_SOLIC IS NULL THEN 'SEM VENCIMENTO REGULATÓRIO'
+        WHEN DATEDIFF(DAY, CAST(GETDATE() AS date), CAST(DATEADD(DAY, 15, M.DAT_SOLIC) AS date)) < 0 THEN 'EM ATRASO'
+        WHEN DATEDIFF(DAY, CAST(GETDATE() AS date), CAST(DATEADD(DAY, 15, M.DAT_SOLIC) AS date)) = 0 THEN 'VENCE HOJE'
+        WHEN DATEDIFF(DAY, CAST(GETDATE() AS date), CAST(DATEADD(DAY, 15, M.DAT_SOLIC) AS date)) <= 7 THEN 'VENCE 7 DIAS'
+        ELSE 'NO PRAZO'
+    END`;
+
+// Situação das medidas do grupo 2 (0070, 0805, 0804, 0700, 0720): só a 0070 usa
+// o prazo calculado acima; as demais continuam lendo M.DES_SITUACAO direto.
+const SITUACAO_MEDIDA_GRUPO2 = `
+    CASE
+        WHEN M.COD_MEDIDA = '0070' THEN ${SITUACAO_PRAZO_0070}
+        ELSE ${SITUACAO_MEDIDA}
+    END`;
+
 function logRegulatorio(rows, contexto) {
   if (process.env.REGULATORIO_DEBUG !== 'true') return;
   rows.slice(0, 20).forEach((row) => {
@@ -44,4 +65,11 @@ function logRegulatorio(rows, contexto) {
   });
 }
 
-module.exports = { APPLY_REGULATORIO, SITUACAO_REGULATORIA, SITUACAO_MEDIDA, logRegulatorio };
+module.exports = {
+  APPLY_REGULATORIO,
+  SITUACAO_REGULATORIA,
+  SITUACAO_MEDIDA,
+  SITUACAO_PRAZO_0070,
+  SITUACAO_MEDIDA_GRUPO2,
+  logRegulatorio,
+};

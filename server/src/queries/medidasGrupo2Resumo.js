@@ -1,7 +1,7 @@
 const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
-const { SITUACAO_MEDIDA } = require('./regulatorio');
+const { SITUACAO_MEDIDA_GRUPO2 } = require('./regulatorio');
 
 /**
  * Mesmo padrão de buscarResumoMedidas, mas agregando as medidas do GRUPO 2
@@ -48,7 +48,7 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
   const query = `
     SELECT
         M.COD_MEDIDA,
-        ${SITUACAO_MEDIDA} AS DES_SITUACAO,
+        ${SITUACAO_MEDIDA_GRUPO2} AS DES_SITUACAO,
         COUNT(*) AS QUANTIDADE
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
@@ -68,9 +68,9 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
         )
         ${extraWhere}
     GROUP BY
-        M.COD_MEDIDA, M.DES_SITUACAO
+        M.COD_MEDIDA, ${SITUACAO_MEDIDA_GRUPO2}
     ORDER BY
-        M.COD_MEDIDA, M.DES_SITUACAO;
+        M.COD_MEDIDA, DES_SITUACAO;
   `;
 
   const result = await request.query(query);

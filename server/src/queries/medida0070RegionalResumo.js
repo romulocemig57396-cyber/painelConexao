@@ -1,19 +1,6 @@
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
-
-// Prazo da medida 0070 deixou de vir direto de M.DES_SITUACAO (texto livre
-// do SAP, sem data de vencimento de verdade) e passa a ser calculado: 15
-// dias corridos a partir da criação da medida (M.DAT_SOLIC), nas mesmas 4
-// categorias de prazo usadas no resto do painel (EM ATRASO/VENCE HOJE/
-// VENCE 7 DIAS/NO PRAZO) — mesmo estilo de regulatorio.js:SITUACAO_REGULATORIA.
-const SITUACAO_PRAZO_0070 = `
-    CASE
-        WHEN M.DAT_SOLIC IS NULL THEN 'SEM VENCIMENTO REGULATÓRIO'
-        WHEN DATEDIFF(DAY, CAST(GETDATE() AS date), CAST(DATEADD(DAY, 15, M.DAT_SOLIC) AS date)) < 0 THEN 'EM ATRASO'
-        WHEN DATEDIFF(DAY, CAST(GETDATE() AS date), CAST(DATEADD(DAY, 15, M.DAT_SOLIC) AS date)) = 0 THEN 'VENCE HOJE'
-        WHEN DATEDIFF(DAY, CAST(GETDATE() AS date), CAST(DATEADD(DAY, 15, M.DAT_SOLIC) AS date)) <= 7 THEN 'VENCE 7 DIAS'
-        ELSE 'NO PRAZO'
-    END`;
+const { SITUACAO_PRAZO_0070 } = require('./regulatorio');
 
 async function buscarResumoMedida0070Regional(pool, filtros = {}) {
   const { grupo1Medidas, statusPendente, codServicoFiltro: servicosPadrao } = config.regrasNegocio;

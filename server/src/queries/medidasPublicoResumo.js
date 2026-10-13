@@ -1,6 +1,6 @@
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
-const { APPLY_REGULATORIO, SITUACAO_REGULATORIA, SITUACAO_MEDIDA } = require('./regulatorio');
+const { APPLY_REGULATORIO, SITUACAO_REGULATORIA, SITUACAO_MEDIDA_GRUPO2 } = require('./regulatorio');
 
 /**
  * Exporta somente contagens agregadas das medidas pendentes. A CTE de notas
@@ -33,7 +33,7 @@ async function buscarResumoMedidasPublico(
       SELECT M.NUM_NOTA, M.COD_MEDIDA, N.COD_SERVICO, N.MERCADO,
         COALESCE(R.REGIONAL_REGULATORIA, N.REGIONAL) AS REGIONAL,
         ${SITUACAO_REGULATORIA} AS SITUACAO_REGULATORIA,
-        ${SITUACAO_MEDIDA} AS SITUACAO_MEDIDA
+        ${SITUACAO_MEDIDA_GRUPO2} AS SITUACAO_MEDIDA
       FROM TBL_MEDIDAS M
       INNER JOIN NOTAS_REGIONAIS N ON N.NUM_NOTA = M.NUM_NOTA
       ${APPLY_REGULATORIO}
