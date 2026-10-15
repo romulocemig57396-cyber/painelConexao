@@ -2,7 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams, campoContemPalavra, campoIgual, medidaCasePorServico } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO } = require('./mapeamentoMedidaServico');
-const { JOIN_TIPO_SOLICITACAO, TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
+const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
 
 /**
  * Histórico mensal de aprovação, 3 categorias mutuamente exclusivas por
@@ -44,7 +44,7 @@ async function buscarHistoricoAprovacao(pool, filtros = {}) {
     ? campoIgual('N.DES_MERCADO', request, 'mercado', filtros.mercado)
     : '1=1';
   const condRegional = regionalInClause ? `AND L.COD_SP IN (${regionalInClause})` : '';
-  const condTipo = condTipoSolicitacao(request, filtros.tipoSolicitacao);
+  const condTipo = condFiltrosSolicitacao(request, filtros);
 
   const query = `
     SELECT MES, CATEGORIA, COUNT(*) AS QTD
@@ -99,14 +99,14 @@ async function buscarHistoricoAprovacaoGranular(pool) {
   const condReprovado = campoContemPalavra('M.COD_STAT_USU', request, 'stRep', statusReprovado);
 
   const query = `
-    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CATEGORIA, COUNT(*) AS QTD
+    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA, COUNT(*) AS QTD
     FROM (
         SELECT
             FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
             N.COD_SERVICO AS SERVICO,
             N.DES_MERCADO AS MERCADO,
             L.COD_SP AS REGIONAL,
-            ${TIPO_SOLICITACAO} AS TIPO_SOLICITACAO,
+            ${COLUNAS_SOLICITACAO},
             CASE
                 WHEN ${condCancelado} THEN 'CANCELADO'
                 WHEN ${condAprovado} THEN 'APROVADO'
@@ -121,8 +121,8 @@ async function buscarHistoricoAprovacaoGranular(pool) {
           AND M.DAT_TREAL >= @dataMinima
     ) X
     WHERE CATEGORIA IS NOT NULL
-    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CATEGORIA
-    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CATEGORIA;
+    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA
+    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA;
   `;
 
   const result = await request.query(query);

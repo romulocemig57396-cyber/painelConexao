@@ -10,6 +10,12 @@ export default function Filters({
   tiposSolicitacao,
   tiposSolicitacaoSelecionados,
   onTiposSolicitacaoChange,
+  classes,
+  classesSelecionadas,
+  onClassesChange,
+  faixasCaixas,
+  faixasCaixasSelecionadas,
+  onFaixasCaixasChange,
   medidasGrupo1,
   medidasSelecionadas,
   onMedidasChange,
@@ -23,6 +29,8 @@ export default function Filters({
     servicosSelecionados.length !== servicos.length ||
     regionaisSelecionadas.length !== regionais.length ||
     tiposSolicitacaoSelecionados.length !== tiposSolicitacao.length ||
+    classesSelecionadas.length !== classes.length ||
+    faixasCaixasSelecionadas.length !== faixasCaixas.length ||
     medidasSelecionadas.length !== medidasGrupo1.length ||
     situacoesSelecionadas.length !== situacoesVencimento.length ||
     cardFiltroAtivo;
@@ -48,6 +56,20 @@ export default function Filters({
         opcoes={tiposSolicitacao}
         selecionadas={tiposSolicitacaoSelecionados}
         onChange={onTiposSolicitacaoChange}
+        wrapperClassName="filters-bar__field filters-bar__field--full"
+      />
+      <ChipMultiFilter
+        label="Classe"
+        opcoes={classes}
+        selecionadas={classesSelecionadas}
+        onChange={onClassesChange}
+        wrapperClassName="filters-bar__field filters-bar__field--full"
+      />
+      <ChipMultiFilter
+        label="Número de caixas"
+        opcoes={faixasCaixas}
+        selecionadas={faixasCaixasSelecionadas}
+        onChange={onFaixasCaixasChange}
         wrapperClassName="filters-bar__field filters-bar__field--full"
       />
       <ChipMultiFilter

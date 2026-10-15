@@ -2,7 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
 const { SITUACAO_MEDIDA_GRUPO2 } = require('./regulatorio');
-const { JOIN_TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
+const { JOIN_TIPO_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
 
 /**
  * Mesmo padrão de buscarResumoMedidas, mas agregando as medidas do GRUPO 2
@@ -42,7 +42,7 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
     request.input('filtroStatus', sql.NVarChar, filtros.status);
     extraWhere += ' AND M.COD_STAT_USU = @filtroStatus';
   }
-  extraWhere += ` ${condTipoSolicitacao(request, filtros.tipoSolicitacao)}`;
+  extraWhere += ` ${condFiltrosSolicitacao(request, filtros)}`;
   if (regionalInClause) {
     extraWhere += ` AND L.COD_SP IN (${regionalInClause})`;
   }

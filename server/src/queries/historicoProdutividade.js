@@ -2,7 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams, campoIgual } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO, substituirMedidasPorServico } = require('./mapeamentoMedidaServico');
-const { JOIN_TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
+const { JOIN_TIPO_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
 
 /**
  * Histórico mensal de produtividade por matrícula (COD_RESP_CONC): conta
@@ -51,7 +51,7 @@ async function buscarHistoricoProdutividade(pool, filtros = {}) {
     ? campoIgual('N.DES_MERCADO', request, 'mercado', filtros.mercado)
     : '1=1';
   const condRegional = regionalInClause ? `AND L.COD_SP IN (${regionalInClause})` : '';
-  const condTipo = condTipoSolicitacao(request, filtros.tipoSolicitacao);
+  const condTipo = condFiltrosSolicitacao(request, filtros);
 
   const query = `
     WITH Contagem AS (

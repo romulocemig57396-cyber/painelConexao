@@ -2,7 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams, campoNaoContemPalavra, campoIgual, medidaCasePorServico } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO } = require('./mapeamentoMedidaServico');
-const { JOIN_TIPO_SOLICITACAO, TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
+const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
 
 /**
  * Histórico mensal de universalização de obras: notas com a medida "com
@@ -38,7 +38,7 @@ async function buscarHistoricoUniversalizacao(pool, filtros = {}) {
     ? campoIgual('N.DES_MERCADO', request, 'mercado', filtros.mercado)
     : '1=1';
   const condRegional = regionalInClause ? `AND L.COD_SP IN (${regionalInClause})` : '';
-  const condTipo = condTipoSolicitacao(request, filtros.tipoSolicitacao);
+  const condTipo = condFiltrosSolicitacao(request, filtros);
 
   const query = `
     SELECT MES, CATEGORIA, COUNT(*) AS QTD
@@ -94,14 +94,14 @@ async function buscarHistoricoUniversalizacaoGranular(pool) {
   const condNaoCancelado = campoNaoContemPalavra('M.COD_STAT_USU', request, 'stCanc', statusCancelado);
 
   const query = `
-    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CATEGORIA, COUNT(*) AS QTD
+    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA, COUNT(*) AS QTD
     FROM (
         SELECT
             FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
             N.COD_SERVICO AS SERVICO,
             N.DES_MERCADO AS MERCADO,
             L.COD_SP AS REGIONAL,
-            ${TIPO_SOLICITACAO} AS TIPO_SOLICITACAO,
+            ${COLUNAS_SOLICITACAO},
             CASE
                 WHEN N.COD_UNIVERSALIZACAO IN (${universalizadaInClause}) THEN 'UNIVERSALIZADA'
                 WHEN N.COD_UNIVERSALIZACAO IN (${naoUniversalizadaInClause}) THEN 'NAO_UNIVERSALIZADA'
@@ -118,8 +118,8 @@ async function buscarHistoricoUniversalizacaoGranular(pool) {
           AND M.DAT_TREAL >= @dataMinima
           AND ${condNaoCancelado}
     ) X
-    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CATEGORIA
-    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CATEGORIA;
+    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA
+    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA;
   `;
 
   const result = await request.query(query);

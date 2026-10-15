@@ -2,7 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
 const { APPLY_REGULATORIO, SITUACAO_REGULATORIA, logRegulatorio } = require('./regulatorio');
-const { JOIN_TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
+const { JOIN_TIPO_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
 
 /**
  * Monta e executa a query de medidas pendentes (grupo 1) com sinalização de grupo 2,
@@ -49,7 +49,7 @@ async function buscarMedidasPendentes(pool, filtros = {}) {
   if (filtros.grupo2) {
     extraWhere += ' AND P.MEDIDAS_PENDENTES IS NOT NULL';
   }
-  extraWhere += ` ${condTipoSolicitacao(request, filtros.tipoSolicitacao)}`;
+  extraWhere += ` ${condFiltrosSolicitacao(request, filtros)}`;
   if (regionalInClause) {
     extraWhere += ` AND COALESCE(R.REGIONAL_REGULATORIA, L.COD_SP) IN (${regionalInClause})`;
   }
