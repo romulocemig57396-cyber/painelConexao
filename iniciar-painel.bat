@@ -2,10 +2,16 @@
 setlocal
 cd /d "%~dp0"
 
-echo Iniciando o Painel de Medidas...
+REM Porta lida de server\.env (linha PORT=...); se nao existir, usa 3001.
+set "PORTA=3001"
+if exist "server\.env" (
+  for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"PORT=" "server\.env"`) do set "PORTA=%%B"
+)
+
+echo Iniciando o Painel de Medidas na porta %PORTA%...
 start "Painel de Medidas - Servidor" cmd /k npm run prod
 
-set "URL=http://localhost:3001/api/health"
+set "URL=http://localhost:%PORTA%/api/health"
 set /a TENTATIVAS=0
 set /a MAX_TENTATIVAS=90
 
@@ -21,7 +27,7 @@ goto aguardar
 
 :pronto
 echo Servidor pronto. Abrindo o navegador...
-start "" "http://localhost:3001"
+start "" "http://localhost:%PORTA%"
 goto fim
 
 :expirou
