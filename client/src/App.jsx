@@ -123,6 +123,9 @@ export default function App() {
   const [produtividadeMedidasSelecionadas, setProdutividadeMedidasSelecionadas] = useState([]);
   const [produtividadeMedidasInicializado, setProdutividadeMedidasInicializado] = useState(false);
   const [produtividadeLoading, setProdutividadeLoading] = useState(true);
+  // Valor da obra (uma vez por nota) das notas de cada gráfico do Histórico — um card por gráfico.
+  const [historicoValorObra, setHistoricoValorObra] = useState({});
+  const [historicoValorObraLoading, setHistoricoValorObraLoading] = useState(true);
   const [produtividadeError, setProdutividadeError] = useState(null);
 
   // Aba "Orçamentos emitíveis": lista independente (medida fixa, 0080 com
@@ -487,6 +490,52 @@ export default function App() {
   }, [produtividadeMedidasSelecionadas, historicoServico, historicoMercado, historicoRegionaisSelecionadas, historicoTiposSelecionados, historicoClassesSelecionadas, historicoFaixasSelecionadas]);
 
   useEffect(() => {
+    async function carregarValorObraHistorico() {
+      setHistoricoValorObraLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.set('servico', historicoServico);
+        if (historicoMercado) params.set('mercado', historicoMercado);
+        params.set('regional', historicoRegionaisSelecionadas.join(','));
+        if (historicoTiposSelecionados.length !== historicoTiposDisponiveis.length) {
+          params.set('tipoSolicitacao', historicoTiposSelecionados.join(','));
+        }
+        if (historicoClassesSelecionadas.length !== historicoClassesDisponiveis.length) {
+          params.set('classe', historicoClassesSelecionadas.join(','));
+        }
+        if (historicoFaixasSelecionadas.length !== historicoFaixasDisponiveis.length) {
+          params.set('faixaCaixas', historicoFaixasSelecionadas.join(','));
+        }
+        if (
+          produtividadeMedidasInicializado &&
+          produtividadeMedidasSelecionadas.length !== produtividadeMedidasDisponiveis.length
+        ) {
+          params.set('medidas', produtividadeMedidasSelecionadas.join(','));
+        }
+        const resp = await fetch(`/api/historico/valor-obra?${params.toString()}`);
+        if (!resp.ok) throw new Error(`Falha na API do valor da obra (${resp.status})`);
+        const json = await resp.json();
+        setHistoricoValorObra(json.data);
+      } catch {
+        // O card é complementar: se falhar, os gráficos seguem normais, sem o card.
+        setHistoricoValorObra({});
+      } finally {
+        setHistoricoValorObraLoading(false);
+      }
+    }
+    carregarValorObraHistorico();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    historicoServico,
+    historicoMercado,
+    historicoRegionaisSelecionadas,
+    historicoTiposSelecionados,
+    historicoClassesSelecionadas,
+    historicoFaixasSelecionadas,
+    produtividadeMedidasSelecionadas,
+  ]);
+
+  useEffect(() => {
     // "servicos" já é buscado pra aba Lista (carregarDados) — só espera
     // popular pra definir a seleção inicial desta aba, sem refazer a chamada.
     if (servicos.length && !orcamentosServicosInicializado) {
@@ -698,6 +747,9 @@ export default function App() {
               />
             </section>
             {historicoError && <div className="error-banner">Erro ao carregar dados: {historicoError}</div>}
+            {historicoValorObra.aprovacao && (
+              <ValorObraCard valorObra={historicoValorObra.aprovacao} loading={historicoValorObraLoading} />
+            )}
             <HistoricoStackedBarChart
               titulo="Aprovação de pedidos (medida 0019)"
               linhas={historicoAprovacao}
@@ -705,6 +757,9 @@ export default function App() {
               campoCategoria="CATEGORIA"
               loading={historicoLoading}
             />
+            {historicoValorObra.liberacao && (
+              <ValorObraCard valorObra={historicoValorObra.liberacao} loading={historicoValorObraLoading} />
+            )}
             <HistoricoStackedBarChart
               titulo="Tipo de liberação (medidas 0590 / 0550 / 0501)"
               linhas={historicoLiberacao}
@@ -712,6 +767,9 @@ export default function App() {
               campoCategoria="TIPO"
               loading={historicoLoading}
             />
+            {historicoValorObra.universalizacao && (
+              <ValorObraCard valorObra={historicoValorObra.universalizacao} loading={historicoValorObraLoading} />
+            )}
             <HistoricoStackedBarChart
               titulo="Universalização de obras (medida 0590)"
               linhas={historicoUniversalizacao}
@@ -730,6 +788,9 @@ export default function App() {
             </section>
             {produtividadeError && (
               <div className="error-banner">Erro ao carregar dados: {produtividadeError}</div>
+            )}
+            {historicoValorObra.produtividade && (
+              <ValorObraCard valorObra={historicoValorObra.produtividade} loading={historicoValorObraLoading} />
             )}
             <ProdutividadeBarChart
               titulo="Produtividade por matrícula"

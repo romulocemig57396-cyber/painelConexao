@@ -1,9 +1,9 @@
 const express = require('express');
 const { getPool } = require('../db');
-const { buscarHistoricoAprovacao } = require('../queries/historicoAprovacao');
-const { buscarHistoricoLiberacao } = require('../queries/historicoLiberacao');
-const { buscarHistoricoProdutividade } = require('../queries/historicoProdutividade');
-const { buscarHistoricoUniversalizacao } = require('../queries/historicoUniversalizacao');
+const { buscarHistoricoAprovacao, buscarValorObraAprovacao } = require('../queries/historicoAprovacao');
+const { buscarHistoricoLiberacao, buscarValorObraLiberacao } = require('../queries/historicoLiberacao');
+const { buscarHistoricoProdutividade, buscarValorObraProdutividade } = require('../queries/historicoProdutividade');
+const { buscarHistoricoUniversalizacao, buscarValorObraUniversalizacao } = require('../queries/historicoUniversalizacao');
 const config = require('../config');
 const { parseListaFiltro, validarEnum, validarListaEnum } = require('./queryHelpers');
 
@@ -98,6 +98,37 @@ router.get('/historico/produtividade', async (req, res) => {
   } catch (err) {
     if (err.status === 400) return res.status(400).json({ error: err.message });
     console.error('Erro ao buscar histórico de produtividade:', err);
+    res.status(500).json({ error: 'Falha ao consultar o banco de dados', detail: err.message });
+  }
+});
+
+// Valor da obra (uma vez por nota) das notas de cada gráfico do histórico, com os
+// mesmos filtros dos gráficos — um card por gráfico. A produtividade também
+// respeita o filtro próprio de medida (?medidas=).
+router.get('/historico/valor-obra', async (req, res) => {
+  const zerado = { notas: 0, valorObra: 0 };
+  try {
+    const filtros = lerFiltrosComuns(req);
+    const medidasFiltro = parseListaFiltro(req.query.medidas);
+    if (servicoVazio(filtros) || regionalVazia(filtros) || tipoSolicitacaoVazio(filtros)) {
+      return res.json({
+        data: { aprovacao: zerado, liberacao: zerado, universalizacao: zerado, produtividade: zerado },
+      });
+    }
+
+    const pool = await getPool();
+    const [aprovacao, liberacao, universalizacao, produtividade] = await Promise.all([
+      buscarValorObraAprovacao(pool, filtros),
+      buscarValorObraLiberacao(pool, filtros),
+      buscarValorObraUniversalizacao(pool, filtros),
+      medidasFiltro && medidasFiltro.length === 0
+        ? zerado
+        : buscarValorObraProdutividade(pool, { ...filtros, medidas: medidasFiltro }),
+    ]);
+    res.json({ data: { aprovacao, liberacao, universalizacao, produtividade } });
+  } catch (err) {
+    if (err.status === 400) return res.status(400).json({ error: err.message });
+    console.error('Erro ao buscar valor da obra do histórico:', err);
     res.status(500).json({ error: 'Falha ao consultar o banco de dados', detail: err.message });
   }
 });

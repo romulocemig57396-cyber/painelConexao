@@ -3,6 +3,7 @@ const config = require('../config');
 const { inClauseParams, campoIgual } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO, substituirMedidasPorServico } = require('./mapeamentoMedidaServico');
 const { JOIN_TIPO_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
+const { consultaValorObra, totalValorObra } = require('./valorObra');
 
 /**
  * Histórico mensal de produtividade por matrícula (COD_RESP_CONC): conta
@@ -23,7 +24,7 @@ const { JOIN_TIPO_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicit
  *
  * filtros.servico/filtros.mercado: ver comentário em historicoAprovacao.js.
  */
-async function buscarHistoricoProdutividade(pool, filtros = {}) {
+async function buscarHistoricoProdutividade(pool, filtros = {}, { valorObra = false } = {}) {
   const { codServicoFiltro, dataMinima, produtividade } = config.regrasHistorico;
   const { medidas: medidasPadrao, topN } = produtividade;
   const medidas = filtros.medidas && filtros.medidas.length ? filtros.medidas : medidasPadrao;
@@ -53,12 +54,8 @@ async function buscarHistoricoProdutividade(pool, filtros = {}) {
   const condRegional = regionalInClause ? `AND L.COD_SP IN (${regionalInClause})` : '';
   const condTipo = condFiltrosSolicitacao(request, filtros);
 
-  const query = `
-    WITH Contagem AS (
-        SELECT
-            FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
-            M.COD_RESP_CONC,
-            COUNT(*) AS QTD_CONCLUIDAS
+  // FROM/WHERE compartilhado pela contagem por matrícula e pelo valor da obra.
+  const base = `
         FROM TBL_MEDIDAS M
         INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
         ${JOIN_TIPO_SOLICITACAO}
@@ -68,7 +65,17 @@ async function buscarHistoricoProdutividade(pool, filtros = {}) {
           AND M.DAT_TREAL >= @dataMinima
           AND ${condMercado}
           ${condRegional}
-          ${condTipo}
+          ${condTipo}`;
+
+  const query = valorObra
+    ? consultaValorObra(`SELECT N.NUM_NOTA ${base}`, 'NUM_NOTA')
+    : `
+    WITH Contagem AS (
+        SELECT
+            FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
+            M.COD_RESP_CONC,
+            COUNT(*) AS QTD_CONCLUIDAS
+        ${base}
         GROUP BY FORMAT(M.DAT_TREAL, 'yyyy-MM'), M.COD_RESP_CONC
     ),
     Ranking AS (
@@ -98,4 +105,9 @@ async function buscarHistoricoProdutividade(pool, filtros = {}) {
   return result.recordset;
 }
 
-module.exports = { buscarHistoricoProdutividade };
+/** Valor da obra das notas do gráfico de produtividade (um total só), com os mesmos filtros. */
+async function buscarValorObraProdutividade(pool, filtros = {}) {
+  return totalValorObra(await buscarHistoricoProdutividade(pool, filtros, { valorObra: true }));
+}
+
+module.exports = { buscarHistoricoProdutividade, buscarValorObraProdutividade };

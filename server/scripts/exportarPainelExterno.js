@@ -1,8 +1,8 @@
 require('../src/confiarCertificadosWindows');
 const { getPool } = require('../src/db');
-const { buscarHistoricoAprovacaoGranular } = require('../src/queries/historicoAprovacao');
-const { buscarHistoricoLiberacaoGranular } = require('../src/queries/historicoLiberacao');
-const { buscarHistoricoUniversalizacaoGranular } = require('../src/queries/historicoUniversalizacao');
+const { buscarHistoricoAprovacaoGranular, buscarValorObraAprovacaoGranular } = require('../src/queries/historicoAprovacao');
+const { buscarHistoricoLiberacaoGranular, buscarValorObraLiberacaoGranular } = require('../src/queries/historicoLiberacao');
+const { buscarHistoricoUniversalizacaoGranular, buscarValorObraUniversalizacaoGranular } = require('../src/queries/historicoUniversalizacao');
 const { buscarResumoMedidasPublico, buscarValorObraPublico } = require('../src/queries/medidasPublicoResumo');
 const { buscarInconsistencias } = require('../src/queries/inconsistencias');
 const { buscarOrcamentosEmitiveis } = require('../src/queries/orcamentosEmitiveis');
@@ -30,6 +30,11 @@ async function main() {
       buscarHistoricoAprovacaoGranular(pool),
       buscarHistoricoLiberacaoGranular(pool),
       buscarHistoricoUniversalizacaoGranular(pool),
+    ]);
+    const [valorObraAprovacao, valorObraLiberacao, valorObraUniversalizacao] = await Promise.all([
+      buscarValorObraAprovacaoGranular(pool),
+      buscarValorObraLiberacaoGranular(pool),
+      buscarValorObraUniversalizacaoGranular(pool),
     ]);
 
     console.log('Consultando medidas agregadas, medida 0070 por regional, inconsistências e orçamentos emitíveis...');
@@ -93,7 +98,9 @@ async function main() {
       quantidade: r.QUANTIDADE,
     }));
 
-    const valorObraPayload = valorObra.map((r) => ({
+    // Mesmo formato pros 4 gráficos: "medidas" (Medidas Pendentes) + 3 do histórico.
+    const linhaValorObra = (grafico) => (r) => ({
+      grafico,
       servico: r.SERVICO,
       mercado: r.MERCADO,
       regional: r.REGIONAL,
@@ -102,7 +109,13 @@ async function main() {
       faixaCaixas: r.FAIXA_CAIXAS,
       notas: r.NOTAS,
       valorObra: r.VALOR_OBRA ?? 0,
-    }));
+    });
+    const valorObraPayload = [
+      ...valorObra.map(linhaValorObra('medidas')),
+      ...valorObraAprovacao.map(linhaValorObra('aprovacao')),
+      ...valorObraLiberacao.map(linhaValorObra('liberacao')),
+      ...valorObraUniversalizacao.map(linhaValorObra('universalizacao')),
+    ];
 
     const medida0070RegionalPayload = medida0070Regional.map((r) => ({
       servico: r.SERVICO,

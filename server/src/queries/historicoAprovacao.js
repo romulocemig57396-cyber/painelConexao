@@ -3,6 +3,7 @@ const config = require('../config');
 const { inClauseParams, campoContemPalavra, campoIgual, medidaCasePorServico } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO } = require('./mapeamentoMedidaServico');
 const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
+const { DIMENSOES_FILTROS, consultaValorObra, totalValorObra } = require('./valorObra');
 
 /**
  * Histórico mensal de aprovação, 3 categorias mutuamente exclusivas por
@@ -23,7 +24,7 @@ const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO, condFiltrosSolicitacao } = r
  * (mesma agregação por MES de antes quando ausentes, preservando o
  * comportamento atual).
  */
-async function buscarHistoricoAprovacao(pool, filtros = {}) {
+async function buscarHistoricoAprovacao(pool, filtros = {}, { valorObra = false } = {}) {
   const { statusCancelado, statusAprovado, statusReprovado, codServicoFiltro, dataMinima } = config.regrasHistorico;
 
   const servicos = filtros.servico?.length ? filtros.servico : codServicoFiltro;
@@ -46,10 +47,9 @@ async function buscarHistoricoAprovacao(pool, filtros = {}) {
   const condRegional = regionalInClause ? `AND L.COD_SP IN (${regionalInClause})` : '';
   const condTipo = condFiltrosSolicitacao(request, filtros);
 
-  const query = `
-    SELECT MES, CATEGORIA, COUNT(*) AS QTD
-    FROM (
+  const interna = `
         SELECT
+            N.NUM_NOTA,
             FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
             CASE
                 WHEN ${condCancelado} THEN 'CANCELADO'
@@ -66,6 +66,13 @@ async function buscarHistoricoAprovacao(pool, filtros = {}) {
           AND ${condMercado}
           ${condRegional}
           ${condTipo}
+`;
+
+  const query = valorObra
+    ? consultaValorObra(interna, 'CATEGORIA')
+    : `
+    SELECT MES, CATEGORIA, COUNT(*) AS QTD
+    FROM (${interna}
     ) X
     WHERE CATEGORIA IS NOT NULL
     GROUP BY MES, CATEGORIA
@@ -83,7 +90,7 @@ async function buscarHistoricoAprovacao(pool, filtros = {}) {
  * essas 3 dimensões — uma consulta só cobre todas as combinações, em vez do
  * laço combinatório que o script estático antigo fazia.
  */
-async function buscarHistoricoAprovacaoGranular(pool) {
+async function buscarHistoricoAprovacaoGranular(pool, { valorObra = false } = {}) {
   const { statusCancelado, statusAprovado, statusReprovado, servicosDisponiveis, dataMinima } =
     config.regrasHistorico;
 
@@ -98,10 +105,9 @@ async function buscarHistoricoAprovacaoGranular(pool) {
   const condAprovado = campoContemPalavra('M.COD_STAT_USU', request, 'stApr', statusAprovado);
   const condReprovado = campoContemPalavra('M.COD_STAT_USU', request, 'stRep', statusReprovado);
 
-  const query = `
-    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA, COUNT(*) AS QTD
-    FROM (
+  const interna = `
         SELECT
+            N.NUM_NOTA,
             FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
             N.COD_SERVICO AS SERVICO,
             N.DES_MERCADO AS MERCADO,
@@ -119,6 +125,13 @@ async function buscarHistoricoAprovacaoGranular(pool) {
         WHERE M.COD_MEDIDA = ${medidaAprovacaoCase}
           AND N.COD_SERVICO IN (${servicoInClause})
           AND M.DAT_TREAL >= @dataMinima
+`;
+
+  const query = valorObra
+    ? consultaValorObra(interna, 'CATEGORIA', DIMENSOES_FILTROS)
+    : `
+    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA, COUNT(*) AS QTD
+    FROM (${interna}
     ) X
     WHERE CATEGORIA IS NOT NULL
     GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA
@@ -129,4 +142,19 @@ async function buscarHistoricoAprovacaoGranular(pool) {
   return result.recordset;
 }
 
-module.exports = { buscarHistoricoAprovacao, buscarHistoricoAprovacaoGranular };
+/** Valor da obra das notas do gráfico (um total só), com os mesmos filtros de buscarHistoricoAprovacao. */
+async function buscarValorObraAprovacao(pool, filtros = {}) {
+  return totalValorObra(await buscarHistoricoAprovacao(pool, filtros, { valorObra: true }));
+}
+
+/** Valor da obra por combinação dos filtros do painel externo (exportação). */
+function buscarValorObraAprovacaoGranular(pool) {
+  return buscarHistoricoAprovacaoGranular(pool, { valorObra: true });
+}
+
+module.exports = {
+  buscarHistoricoAprovacao,
+  buscarHistoricoAprovacaoGranular,
+  buscarValorObraAprovacao,
+  buscarValorObraAprovacaoGranular,
+};
