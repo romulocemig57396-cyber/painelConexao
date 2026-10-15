@@ -3,7 +3,7 @@ const { getPool } = require('../src/db');
 const { buscarHistoricoAprovacaoGranular } = require('../src/queries/historicoAprovacao');
 const { buscarHistoricoLiberacaoGranular } = require('../src/queries/historicoLiberacao');
 const { buscarHistoricoUniversalizacaoGranular } = require('../src/queries/historicoUniversalizacao');
-const { buscarResumoMedidasPublico } = require('../src/queries/medidasPublicoResumo');
+const { buscarResumoMedidasPublico, buscarValorObraPublico } = require('../src/queries/medidasPublicoResumo');
 const { buscarInconsistencias } = require('../src/queries/inconsistencias');
 const { buscarOrcamentosEmitiveis } = require('../src/queries/orcamentosEmitiveis');
 const { buscarResumoMedida0070RegionalGranular } = require('../src/queries/medida0070RegionalResumo');
@@ -33,8 +33,9 @@ async function main() {
     ]);
 
     console.log('Consultando medidas agregadas, medida 0070 por regional, inconsistências e orçamentos emitíveis...');
-    const [medidas, medida0070Regional, inconsistencias, orcamentosEmitiveis] = await Promise.all([
+    const [medidas, valorObra, medida0070Regional, inconsistencias, orcamentosEmitiveis] = await Promise.all([
       buscarResumoMedidasPublico(pool),
+      buscarValorObraPublico(pool),
       buscarResumoMedida0070RegionalGranular(pool),
       buscarInconsistencias(pool),
       buscarOrcamentosEmitiveis(pool),
@@ -92,6 +93,17 @@ async function main() {
       quantidade: r.QUANTIDADE,
     }));
 
+    const valorObraPayload = valorObra.map((r) => ({
+      servico: r.SERVICO,
+      mercado: r.MERCADO,
+      regional: r.REGIONAL,
+      tipoSolicitacao: r.TIPO_SOLICITACAO,
+      classe: r.CLASSE,
+      faixaCaixas: r.FAIXA_CAIXAS,
+      notas: r.NOTAS,
+      valorObra: r.VALOR_OBRA ?? 0,
+    }));
+
     const medida0070RegionalPayload = medida0070Regional.map((r) => ({
       servico: r.SERVICO,
       regional: r.REGIONAL,
@@ -137,13 +149,14 @@ async function main() {
 
     console.log(
       `Enviando ${historico.length} linhas de histórico, ${medidasPayload.length} de medidas, ` +
-        `${medida0070RegionalPayload.length} de medida 0070 por regional, ${inconsistenciasPayload.length} ` +
+        `${valorObraPayload.length} de valor da obra, ${medida0070RegionalPayload.length} de medida 0070 por regional, ${inconsistenciasPayload.length} ` +
         `inconsistências e ${orcamentosPayload.length} orçamentos emitíveis...`,
     );
 
     const corpoRequisicao = JSON.stringify({
       historico,
       medidas: medidasPayload,
+      valorObra: valorObraPayload,
       medida0070Regional: medida0070RegionalPayload,
       inconsistencias: inconsistenciasPayload,
       orcamentosEmitiveis: orcamentosPayload,

@@ -8,7 +8,7 @@ const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO } = require('./tipoSolicitaca
  * normaliza o código de local uma única vez e serve de base para os dois
  * grupos exibidos no painel público.
  */
-async function buscarResumoMedidasPublico(
+function prepararCtesPublico(
   pool,
   servicos = config.regrasNegocio.codServicoFiltro,
   regionais = config.regrasHistorico.regionaisDisponiveis,
@@ -21,7 +21,7 @@ async function buscarResumoMedidasPublico(
   const servicoInClause = inClauseParams(request, 'sv_', servicos);
   const regionalInClause = inClauseParams(request, 'rg_', regionais);
 
-  const result = await request.query(`
+  const ctes = `
     WITH NOTAS_REGIONAIS AS (
       SELECT N.NUM_NOTA, N.COD_SERVICO, N.DES_MERCADO AS MERCADO, L.COD_SP AS REGIONAL,
         ${COLUNAS_SOLICITACAO}
@@ -41,7 +41,16 @@ async function buscarResumoMedidasPublico(
       INNER JOIN NOTAS_REGIONAIS N ON N.NUM_NOTA = M.NUM_NOTA
       ${APPLY_REGULATORIO}
       WHERE M.COD_STAT_USU IN (${statusInClause})
-    )
+    )`;
+
+  return { request, ctes, grupo1InClause, grupo2InClause };
+}
+
+async function buscarResumoMedidasPublico(pool, servicos, regionais) {
+  const { request, ctes, grupo1InClause, grupo2InClause } = prepararCtesPublico(pool, servicos, regionais);
+
+  const result = await request.query(`
+    ${ctes}
     SELECT
       'GRUPO1' AS GRUPO,
       COD_SERVICO AS SERVICO,
@@ -85,4 +94,38 @@ async function buscarResumoMedidasPublico(
   return result.recordset;
 }
 
-module.exports = { buscarResumoMedidasPublico };
+/**
+ * Valor total da obra (TBL_OBRA_CUSTOS.VAL_TOTAL_OBRA) das notas com medida do
+ * grupo 1 pendente — as mesmas do gráfico principal de Medidas Pendentes —,
+ * agrupado pelas dimensões dos filtros do painel externo. Cada nota conta uma
+ * vez só (DISTINCT, as dimensões são todas da nota); valor nulo ou não
+ * positivo não entra na soma.
+ */
+async function buscarValorObraPublico(pool, servicos, regionais) {
+  const { request, ctes, grupo1InClause } = prepararCtesPublico(pool, servicos, regionais);
+
+  const result = await request.query(`
+    ${ctes}
+    SELECT
+      D.COD_SERVICO AS SERVICO,
+      D.MERCADO,
+      D.REGIONAL,
+      D.TIPO_SOLICITACAO,
+      D.CLASSE,
+      D.FAIXA_CAIXAS,
+      COUNT(*) AS NOTAS,
+      SUM(CASE WHEN C.VAL_TOTAL_OBRA > 0 THEN C.VAL_TOTAL_OBRA END) AS VALOR_OBRA
+    FROM (
+      SELECT DISTINCT NUM_NOTA, COD_SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS
+      FROM MEDIDAS_PENDENTES
+      WHERE COD_MEDIDA IN (${grupo1InClause})
+    ) D
+    LEFT JOIN TBL_OBRA_CUSTOS C ON C.COD_NOTA = D.NUM_NOTA
+    GROUP BY D.COD_SERVICO, D.MERCADO, D.REGIONAL, D.TIPO_SOLICITACAO, D.CLASSE, D.FAIXA_CAIXAS
+    ORDER BY SERVICO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS;
+  `);
+
+  return result.recordset;
+}
+
+module.exports = { buscarResumoMedidasPublico, buscarValorObraPublico };

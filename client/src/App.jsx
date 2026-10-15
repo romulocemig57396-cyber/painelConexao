@@ -5,6 +5,7 @@ import Filters from './components/Filters.jsx';
 import Tabs from './components/Tabs.jsx';
 import MedidasTable from './components/MedidasTable.jsx';
 import SituacaoCards from './components/SituacaoCards.jsx';
+import ValorObraCard from './components/ValorObraCard.jsx';
 import MedidasBarChart from './components/MedidasBarChart.jsx';
 import ChipMultiFilter from './components/ChipMultiFilter.jsx';
 import InconsistenciasTable from './components/InconsistenciasTable.jsx';
@@ -50,6 +51,7 @@ export default function App() {
   const [resumo, setResumo] = useState([]);
   const [resumoGrupo2, setResumoGrupo2] = useState([]);
   const [resumo0070Regional, setResumo0070Regional] = useState([]);
+  const [valorObra, setValorObra] = useState({ notas: 0, valorObra: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [servicos, setServicos] = useState([]);
@@ -242,25 +244,29 @@ export default function App() {
       }
       const qsGrupo2 = paramsGrupo2.toString();
 
-      const [respMedidas, respResumo, respResumoGrupo2, respResumo0070] = await Promise.all([
+      const [respMedidas, respResumo, respResumoGrupo2, respResumo0070, respValorObra] = await Promise.all([
         fetch(`/api/medidas?${qs}`),
         fetch(`/api/medidas/resumo?${qs}`),
         fetch(`/api/medidas/resumo-grupo2?${qsGrupo2}`),
         fetch(`/api/medidas/resumo-0070-regional?${qsGrupo2}`),
+        fetch(`/api/medidas/valor-obra?${qs}`),
       ]);
       if (!respMedidas.ok) throw new Error(`Falha na API (${respMedidas.status})`);
       if (!respResumo.ok) throw new Error(`Falha na API do resumo (${respResumo.status})`);
       if (!respResumoGrupo2.ok) throw new Error(`Falha na API do resumo grupo 2 (${respResumoGrupo2.status})`);
       if (!respResumo0070.ok) throw new Error(`Falha na API da medida 0070 (${respResumo0070.status})`);
+      if (!respValorObra.ok) throw new Error(`Falha na API do valor da obra (${respValorObra.status})`);
 
       const json = await respMedidas.json();
       const jsonResumo = await respResumo.json();
       const jsonResumoGrupo2 = await respResumoGrupo2.json();
       const jsonResumo0070 = await respResumo0070.json();
+      const jsonValorObra = await respValorObra.json();
       setRows(json.data);
       setResumo(jsonResumo.data);
       setResumoGrupo2(jsonResumoGrupo2.data);
       setResumo0070Regional(jsonResumo0070.data);
+      setValorObra(jsonValorObra.data);
 
       if (json.regrasNegocio?.grupo1Medidas?.length) {
         setMedidasGrupo1(json.regrasNegocio.grupo1Medidas);
@@ -594,6 +600,7 @@ export default function App() {
 
         {abaAtiva === 'graficos' && (
           <>
+            <ValorObraCard valorObra={valorObra} loading={loading} />
             <MedidasBarChart
               titulo="Medidas pendentes por situação de vencimento"
               resumo={resumo}

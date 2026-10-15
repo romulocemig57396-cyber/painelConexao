@@ -1,7 +1,7 @@
 const express = require('express');
 const { getPool } = require('../db');
 const { buscarMedidasPendentes } = require('../queries/medidasPendentes');
-const { buscarResumoMedidas } = require('../queries/medidasResumo');
+const { buscarResumoMedidas, buscarValorObraMedidas } = require('../queries/medidasResumo');
 const { buscarResumoGrupo2 } = require('../queries/medidasGrupo2Resumo');
 const { buscarOpcoesMedidas } = require('../queries/medidasOpcoes');
 const { buscarResumoMedida0070Regional } = require('../queries/medida0070RegionalResumo');
@@ -133,6 +133,42 @@ router.get('/medidas/resumo', async (req, res) => {
     res.json({ regrasNegocio: config.regrasNegocio, data: resumo });
   } catch (err) {
     console.error('Erro ao buscar resumo de medidas:', err);
+    res.status(500).json({ error: 'Falha ao consultar o banco de dados', detail: err.message });
+  }
+});
+
+// Total do valor da obra (uma vez por nota) das notas do gráfico principal —
+// mesmos filtros de /medidas/resumo.
+router.get('/medidas/valor-obra', async (req, res) => {
+  try {
+    const { area, status, medidas, servico, regional, situacao, grupo2, tipoSolicitacao, classe, faixaCaixas } = req.query;
+    const medidasFiltro = parseListaFiltro(medidas);
+    const servicoFiltro = parseListaFiltro(servico);
+    const regionalFiltro = parseListaFiltro(regional);
+    const situacaoFiltro = parseListaFiltro(situacao);
+    const tipoSolicitacaoFiltro = parseListaFiltro(tipoSolicitacao);
+    const classeFiltro = parseListaFiltro(classe);
+    const faixaCaixasFiltro = parseListaFiltro(faixaCaixas);
+    const algumVazio = [medidasFiltro, servicoFiltro, regionalFiltro, situacaoFiltro, tipoSolicitacaoFiltro, classeFiltro, faixaCaixasFiltro]
+      .some((lista) => lista && lista.length === 0);
+    if (algumVazio) return res.json({ data: { notas: 0, valorObra: 0 } });
+
+    const pool = await getPool();
+    const data = await buscarValorObraMedidas(pool, {
+      area,
+      status,
+      medidas: medidasFiltro,
+      servico: servicoFiltro,
+      regional: regionalFiltro,
+      situacao: situacaoFiltro,
+      tipoSolicitacao: tipoSolicitacaoFiltro,
+      classe: classeFiltro,
+      faixaCaixas: faixaCaixasFiltro,
+      grupo2: grupo2 === 'SIM',
+    });
+    res.json({ data });
+  } catch (err) {
+    console.error('Erro ao buscar valor da obra:', err);
     res.status(500).json({ error: 'Falha ao consultar o banco de dados', detail: err.message });
   }
 });

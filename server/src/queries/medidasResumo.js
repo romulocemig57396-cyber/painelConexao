@@ -11,7 +11,7 @@ const { JOIN_TIPO_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicit
  * "Gráficos". O LEFT JOIN do grupo 2 só existe pra suportar o filtro "grupo2"
  * (atalho do card "Com pendência grupo 2"); a contagem em si não sinaliza grupo 2.
  */
-async function buscarResumoMedidas(pool, filtros = {}) {
+function prepararBaseResumo(pool, filtros) {
   const {
     grupo1Medidas: grupo1Padrao,
     grupo2Medidas,
@@ -52,12 +52,9 @@ async function buscarResumoMedidas(pool, filtros = {}) {
     extraWhere += ` AND COALESCE(R.REGIONAL_REGULATORIA, L.COD_SP) IN (${regionalInClause})`;
   }
 
-  const query = `
-    SELECT COD_MEDIDA, DES_SITUACAO, COUNT(*) AS QUANTIDADE
-    FROM (
-      SELECT
-        M.COD_MEDIDA,
-        ${SITUACAO_REGULATORIA} AS DES_SITUACAO
+  // FROM/WHERE compartilhado pelo resumo por medida/situação e pelo total do
+  // valor da obra — os dois sempre enxergam exatamente as mesmas medidas.
+  const base = `
       FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
         ON M.NUM_NOTA = N.NUM_NOTA
@@ -78,7 +75,21 @@ async function buscarResumoMedidas(pool, filtros = {}) {
         M.COD_MEDIDA IN (${grupo1InClause})
         AND M.COD_STAT_USU IN (${statusInClause})
         AND N.COD_SERVICO IN (${servicoInClause})
-        ${extraWhere}
+        ${extraWhere}`;
+
+  return { request, base };
+}
+
+async function buscarResumoMedidas(pool, filtros = {}) {
+  const { request, base } = prepararBaseResumo(pool, filtros);
+
+  const query = `
+    SELECT COD_MEDIDA, DES_SITUACAO, COUNT(*) AS QUANTIDADE
+    FROM (
+      SELECT
+        M.COD_MEDIDA,
+        ${SITUACAO_REGULATORIA} AS DES_SITUACAO
+      ${base}
     ) X
     GROUP BY COD_MEDIDA, DES_SITUACAO
     ORDER BY
@@ -89,4 +100,29 @@ async function buscarResumoMedidas(pool, filtros = {}) {
   return result.recordset;
 }
 
-module.exports = { buscarResumoMedidas };
+/**
+ * Valor total da obra (TBL_OBRA_CUSTOS.VAL_TOTAL_OBRA) das notas que aparecem no
+ * gráfico de medidas pendentes com os mesmos filtros. Cada nota conta uma vez
+ * só (DISTINCT), mesmo com várias medidas pendentes; valor nulo ou não positivo
+ * não entra na soma. TBL_OBRA_CUSTOS liga pela COD_NOTA (uma linha por nota).
+ */
+async function buscarValorObraMedidas(pool, filtros = {}) {
+  const { request, base } = prepararBaseResumo(pool, filtros);
+
+  const query = `
+    SELECT
+      COUNT(*) AS NOTAS,
+      SUM(CASE WHEN C.VAL_TOTAL_OBRA > 0 THEN C.VAL_TOTAL_OBRA END) AS VALOR_OBRA
+    FROM (
+      SELECT DISTINCT N.NUM_NOTA
+      ${base}
+    ) X
+    LEFT JOIN TBL_OBRA_CUSTOS C ON C.COD_NOTA = X.NUM_NOTA;
+  `;
+
+  const result = await request.query(query);
+  const linha = result.recordset[0] || {};
+  return { notas: linha.NOTAS ?? 0, valorObra: linha.VALOR_OBRA ?? 0 };
+}
+
+module.exports = { buscarResumoMedidas, buscarValorObraMedidas };
