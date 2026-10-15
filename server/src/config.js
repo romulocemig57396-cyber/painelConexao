@@ -67,10 +67,7 @@ const config = {
       semObras: process.env.HIST_MEDIDA_SEM_OBRAS || '0550',
       servicosRede: process.env.HIST_MEDIDA_SERVICOS_REDE || '0501',
     },
-    // Gráfico 3 (produtividade por matrícula): medidas contadas como "concluídas"
-    // (DAT_TREAL preenchida, independente do status atual) e quantas matrículas
-    // aparecem nomeadas por mês antes de agrupar o resto em "Outros".
-    // Gráfico 4 (universalização de obras): notas da medida "com obras"
+    // Gráfico 3 (universalização de obras): notas da medida "com obras"
     // (liberacaoMedidas.comObras) não cancelada, categorizadas pelo
     // COD_UNIVERSALIZACAO da nota. Qualquer código fora das duas listas
     // abaixo (e nulo/vazio) cai em OUTROS.
@@ -79,13 +76,6 @@ const config = {
       naoUniversalizadaCodigos: parseList(process.env.HIST_NAO_UNIVERSALIZADA_CODIGOS, ['70']),
       foraUniversalizacaoCodigos: parseList(process.env.HIST_FORA_UNIVERSALIZACAO_CODIGOS, ['10']),
       segurancaCodigos: parseList(process.env.HIST_SEGURANCA_CODIGOS, ['11', '12', '13']),
-    },
-    produtividade: {
-      medidas: parseList(
-        process.env.HIST_PRODUTIVIDADE_MEDIDAS,
-        ['0019', '0032', '0020', '0021', '0080', '0086', '0800'],
-      ),
-      topN: Number(process.env.HIST_PRODUTIVIDADE_TOP_N) || 10,
     },
   },
   regrasInconsistencias: {

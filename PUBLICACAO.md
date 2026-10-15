@@ -67,9 +67,6 @@ pronta pra descomentar em `iniciar-painel.bat` e `atualizar_historico.bat`.
   continuam, por decisão explícita de que o acesso já fica controlado pelo
   login do Portal, não por agregação.
 
-Produtividade por matrícula **não é exportada** — segue só no painel interno,
-já que envolve identificar pessoas.
-
 ## Privacidade
 
 Histórico e Medidas agregadas continuam sendo só contagens (`COUNT(*) ...

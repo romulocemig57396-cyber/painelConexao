@@ -38,53 +38,53 @@ export default function Filters({
   return (
     <section className="filters-bar">
       <ChipMultiFilter
-        label="Regional"
-        opcoes={regionais}
-        selecionadas={regionaisSelecionadas}
-        onChange={onRegionaisChange}
-        wrapperClassName="filters-bar__field filters-bar__field--full"
-      />
-      <ChipMultiFilter
         label="Serviço"
         opcoes={servicos}
         selecionadas={servicosSelecionados}
         onChange={onServicosChange}
-        wrapperClassName="filters-bar__field filters-bar__field--full"
+        wrapperClassName="filters-bar__field"
+      />
+      <ChipMultiFilter
+        label="Regional"
+        opcoes={regionais}
+        selecionadas={regionaisSelecionadas}
+        onChange={onRegionaisChange}
+        wrapperClassName="filters-bar__field"
       />
       <ChipMultiFilter
         label="Tipo de solicitação"
         opcoes={tiposSolicitacao}
         selecionadas={tiposSolicitacaoSelecionados}
         onChange={onTiposSolicitacaoChange}
-        wrapperClassName="filters-bar__field filters-bar__field--full"
+        wrapperClassName="filters-bar__field"
       />
       <ChipMultiFilter
         label="Classe"
         opcoes={classes}
         selecionadas={classesSelecionadas}
         onChange={onClassesChange}
-        wrapperClassName="filters-bar__field filters-bar__field--full"
+        wrapperClassName="filters-bar__field"
       />
       <ChipMultiFilter
         label="Número de caixas"
         opcoes={faixasCaixas}
         selecionadas={faixasCaixasSelecionadas}
         onChange={onFaixasCaixasChange}
-        wrapperClassName="filters-bar__field filters-bar__field--full"
+        wrapperClassName="filters-bar__field"
       />
       <ChipMultiFilter
         label="Medidas (grupo 1)"
         opcoes={medidasGrupo1}
         selecionadas={medidasSelecionadas}
         onChange={onMedidasChange}
-        wrapperClassName="filters-bar__field filters-bar__field--full"
+        wrapperClassName="filters-bar__field"
       />
       <ChipMultiFilter
         label="Status de vencimento"
         opcoes={situacoesVencimento}
         selecionadas={situacoesSelecionadas}
         onChange={onSituacoesChange}
-        wrapperClassName="filters-bar__field filters-bar__field--full"
+        wrapperClassName="filters-bar__field"
       />
       {temFiltroAtivo && (
         <button type="button" className="filters-bar__clear" onClick={onLimpar}>

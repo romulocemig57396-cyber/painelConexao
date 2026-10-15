@@ -75,8 +75,14 @@ function renderRotuloTotal(props) {
   );
 }
 
-function totalDoMes(entry) {
-  return entry.payload?._total ?? 0;
+// O total fica preso à fatia do topo de cada barra (última categoria com valor
+// maior que zero): rótulo em fatia de altura zero não é desenhado.
+function totalNoTopo(chave, ordem) {
+  return (entry) => {
+    const bruto = entry.payload?._bruto || {};
+    const topo = [...ordem].reverse().find((c) => (bruto[c] || 0) > 0);
+    return topo === chave ? (entry.payload?._total ?? 0) : null;
+  };
 }
 
 function IconeExpandir() {
@@ -174,7 +180,7 @@ function GraficoHistorico({ dados, categorias, mesAtual, altura }) {
                 <Cell key={linha.mes} fillOpacity={linha.mes === mesAtual ? 0.55 : 1} />
               ))}
               <LabelList valueAccessor={calcularPercentualRotulo(cat.key)} content={renderRotuloPercentual} />
-              {ultima && <LabelList valueAccessor={totalDoMes} content={renderRotuloTotal} />}
+              <LabelList valueAccessor={totalNoTopo(cat.key, categorias.map((c) => c.key))} content={renderRotuloTotal} />
             </Bar>
           );
         })}
@@ -183,7 +189,7 @@ function GraficoHistorico({ dados, categorias, mesAtual, altura }) {
   );
 }
 
-export default function HistoricoStackedBarChart({ titulo, linhas, categorias, campoCategoria, loading }) {
+export default function HistoricoStackedBarChart({ titulo, linhas, categorias, campoCategoria, loading, extra }) {
   const [expandido, setExpandido] = useState(false);
 
   useEffect(() => {
@@ -230,6 +236,7 @@ export default function HistoricoStackedBarChart({ titulo, linhas, categorias, c
           <IconeExpandir />
         </button>
       </div>
+      {extra}
       {aviso}
       <GraficoHistorico dados={dados} categorias={categorias} mesAtual={mesAtual} altura={360} />
 

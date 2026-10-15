@@ -1,50 +1,67 @@
-/* ---------- Header ---------- */
+/* ---------- Header (mesmo visual do Portal Conexão MT / painel externo) ---------- */
 .app-header {
   background: var(--header-green);
   color: #fff;
 }
 
-.app-header__brandbar {
-  height: 4px;
-  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
-}
-
 .app-header__content {
-  max-width: 1180px;
+  max-width: 1152px;
   margin: 0 auto;
-  padding: 20px 24px;
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
 
-.app-header__atualizacao {
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-header__logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.app-header__nome {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.app-header__sub {
+  margin: 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .app-header__acoes {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 12px;
+  gap: 12px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.82);
 }
 
 .app-header__botao-publico {
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-pill);
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   font: inherit;
+  font-size: 14px;
 }
 
 .app-header__botao-publico:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .app-header__botao-publico:disabled {
@@ -52,156 +69,203 @@
   opacity: 0.7;
 }
 
-.app-header__eyebrow {
-  display: block;
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.75);
-  margin-bottom: 4px;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-}
-
 /* ---------- Layout ---------- */
 .app-main {
-  max-width: 1180px;
+  max-width: 1152px;
   width: 100%;
   margin: 0 auto;
-  padding: 24px;
+  padding: 32px 16px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   flex: 1;
 }
 
-/* ---------- Metric cards ---------- */
-.metric-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-strong);
 }
 
-.metric-card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-soft);
-  padding: 16px 18px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  text-align: left;
-  width: 100%;
+.page-subtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #4b5563;
 }
 
-button.metric-card {
-  font: inherit;
-  color: inherit;
+.section-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong);
 }
 
-.metric-card--clicavel {
-  cursor: pointer;
-}
-
-.metric-card--clicavel:hover {
-  box-shadow: 0 2px 8px rgba(30, 90, 75, 0.14);
-}
-
-.metric-card--ativo {
-  border: 2px solid var(--petrol-green);
-  background: #eaf5f1;
-  padding: 15px 17px;
-}
-
-.metric-card__icon {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  border-radius: 50%;
-  background: var(--petrol-green);
-  color: #fff;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.metric-card--late .metric-card__icon {
-  background: var(--late-text);
-}
-
-.metric-card--alert .metric-card__icon {
-  background: var(--alert-text);
-}
-
-.metric-card--soon .metric-card__icon {
-  background: var(--soon-text);
-}
-
-.metric-card--ontime .metric-card__icon {
-  background: var(--ontime-text);
-}
-
-.metric-card__body {
+.lista-secao {
   display: flex;
   flex-direction: column;
 }
 
-.metric-card__value {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-body);
-  line-height: 1.1;
+/* ---------- Cards (mesmo visual dos cartões do painel externo) ---------- */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
 }
 
-.metric-card__label {
-  font-size: 13px;
+.stat-cards--situacao {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.stat-card:hover {
+  background: #f9fafb;
+}
+
+.stat-card--ativo,
+.stat-card--ativo:hover {
+  border-color: var(--petrol-green);
+  background: rgba(30, 122, 95, 0.1);
+}
+
+.stat-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-card__dot {
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  border-radius: 50%;
+  background: var(--petrol-green);
+}
+
+.stat-card--late .stat-card__dot {
+  background: var(--late-text);
+}
+
+.stat-card--alert .stat-card__dot {
+  background: var(--alert-text);
+}
+
+.stat-card__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.stat-card__value {
+  margin: 4px 0 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.valor-obra-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1023px) {
+  .valor-obra-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639px) {
+  .valor-obra-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.valor-obra-card {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.valor-obra-card__label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.valor-obra-card__value {
+  margin: 4px 0 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.valor-obra-card__sub {
+  margin: 4px 0 0;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
-/* ---------- Tabs ---------- */
+/* ---------- Tabs (sublinhado, como no painel externo) ---------- */
 .tabs-bar {
   display: flex;
-  gap: 4px;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-pill);
-  padding: 4px;
-  width: fit-content;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--card-border);
 }
 
 .tabs-bar__item {
   border: none;
+  border-bottom: 2px solid transparent;
   background: transparent;
-  padding: 8px 20px;
-  border-radius: var(--radius-pill);
-  font-weight: 600;
+  padding: 8px 16px;
+  font: inherit;
   font-size: 14px;
-  color: var(--text-muted);
+  font-weight: 500;
+  color: #4b5563;
   cursor: pointer;
+  margin-bottom: -1px;
 }
 
-.tabs-bar__item--ativa {
-  background: var(--petrol-green);
-  color: #fff;
+.tabs-bar__item:hover {
+  color: var(--text-strong);
+}
+
+.tabs-bar__item--ativa,
+.tabs-bar__item--ativa:hover {
+  border-bottom-color: var(--petrol-green);
+  color: var(--petrol-green);
 }
 
 /* ---------- Chart ---------- */
 .chart-wrapper {
-  background: #fff;
+  background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-soft);
-  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 16px;
+}
+
+.chart-wrapper > .valor-obra-grid {
+  margin-bottom: 8px;
 }
 
 .chart-wrapper__body {
-  height: 360px;
+  height: 320px;
 }
 
 .chart-header {
@@ -209,7 +273,7 @@ button.metric-card {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
 }
 
 .chart-header .chart-title {
@@ -217,10 +281,10 @@ button.metric-card {
 }
 
 .chart-title {
-  margin: 0 0 16px;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-body);
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong);
 }
 
 .chart-expand-btn {
@@ -306,33 +370,21 @@ button.metric-card {
   margin-bottom: 16px;
 }
 
-.chart-modal__cards .metric-cards {
+/* Cards de atalho dentro do modal de tela cheia: mais compactos. */
+.chart-modal__cards .stat-cards {
   gap: 8px;
   margin-bottom: 12px;
 }
 
-.chart-modal__cards .metric-card {
-  min-width: 0;
+.chart-modal__cards .stat-card {
   padding: 8px 10px;
-  gap: 8px;
 }
 
-.chart-modal__cards .metric-card--ativo {
-  padding: 7px 9px;
+.chart-modal__cards .stat-card__value {
+  font-size: 16px;
 }
 
-.chart-modal__cards .metric-card__icon {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  font-size: 12px;
-}
-
-.chart-modal__cards .metric-card__value {
-  font-size: 18px;
-}
-
-.chart-modal__cards .metric-card__label {
+.chart-modal__cards .stat-card__label {
   font-size: 11px;
 }
 
@@ -341,11 +393,6 @@ button.metric-card {
   gap: 8px 12px;
   padding: 8px 10px;
   box-shadow: none;
-}
-
-.chart-modal__filters .filters-bar__field--full {
-  flex-basis: auto;
-  flex: 1 1 260px;
 }
 
 .chart-modal__filters .filters-bar__field label {
@@ -371,14 +418,14 @@ button.metric-card {
   text-align: right;
   color: var(--text-muted);
   font-size: 11px;
-  margin-top: -4px;
+  margin-top: -16px;
 }
 
 .chart-tooltip {
   background: #fff;
   border: 1px solid var(--card-border);
   border-radius: 10px;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   padding: 10px 12px;
   font-size: 13px;
   color: var(--text-body);
@@ -427,42 +474,28 @@ button.metric-card {
   font-style: normal;
 }
 
-/* ---------- Filters ---------- */
+/* ---------- Filters (cartão único com grupos de chips lado a lado, como no externo) ---------- */
 .filters-bar {
   display: flex;
-  align-items: flex-end;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 24px;
   background: #fff;
   border: 1px solid var(--card-border);
-  border-radius: var(--radius-md);
-  padding: 14px 18px;
-  box-shadow: var(--shadow-soft);
+  border-radius: 12px;
+  padding: 16px;
   flex-wrap: wrap;
 }
 
 .filters-bar__field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .filters-bar__field label {
   font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.filters-bar__field select {
-  min-width: 200px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--card-border);
-  background: #fff;
-  color: var(--text-body);
-}
-
-.filters-bar__field--full {
-  flex-basis: 100%;
+  color: #374151;
+  font-weight: 500;
 }
 
 .chip-list {
@@ -476,23 +509,18 @@ button.metric-card {
   align-items: center;
   border: 1px solid var(--card-border);
   background: #fff;
-  padding: 5px 14px;
+  padding: 4px 12px;
   border-radius: var(--radius-pill);
   font: inherit;
   font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
+  font-weight: 500;
+  color: #374151;
   cursor: pointer;
+  transition: background 0.15s;
 }
 
 .chip:hover {
-  border-color: var(--petrol-green);
-  color: var(--text-body);
-}
-
-.chip--todos {
-  margin-right: 4px;
-  border-style: dashed;
+  background: #f9fafb;
 }
 
 .chip--ativo,
@@ -503,12 +531,15 @@ button.metric-card {
 }
 
 .filters-bar__clear {
+  align-self: flex-end;
   border: none;
   background: transparent;
   color: var(--petrol-green);
-  font-weight: 600;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  padding: 8px 4px;
+  padding: 4px;
 }
 
 .filters-bar__clear:hover {
@@ -525,20 +556,16 @@ button.metric-card {
 }
 
 .table-state {
-  background: #fff;
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-md);
-  padding: 32px;
-  text-align: center;
+  padding: 8px 0;
+  font-size: 14px;
   color: var(--text-muted);
 }
 
-/* ---------- Table ---------- */
+/* ---------- Table (mesmo visual das tabelas do painel externo) ---------- */
 .table-wrapper {
   background: #fff;
   border: 1px solid var(--card-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-soft);
+  border-radius: 12px;
   overflow-x: auto;
 }
 
@@ -550,12 +577,10 @@ button.metric-card {
 
 .medidas-table thead th {
   text-align: left;
-  padding: 12px 14px;
-  background: var(--card-bg);
-  color: var(--text-body);
+  padding: 8px 16px;
+  color: var(--text-muted);
   font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-weight: 500;
   border-bottom: 1px solid var(--card-border);
   white-space: nowrap;
 }
@@ -569,18 +594,15 @@ button.metric-card {
   background: none;
   font: inherit;
   color: inherit;
-  text-transform: inherit;
-  letter-spacing: inherit;
   cursor: pointer;
 }
 
 .th-sort:hover {
-  color: var(--petrol-green);
+  color: #374151;
 }
 
 .th-sort__seta {
   font-size: 10px;
-  color: var(--text-muted);
 }
 
 .th-sort--ativo,
@@ -589,10 +611,14 @@ button.metric-card {
 }
 
 .medidas-table tbody td {
-  padding: 12px 14px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--card-border);
   vertical-align: top;
-  color: var(--text-body);
+  color: #4b5563;
+}
+
+.medidas-table tbody td:first-child {
+  color: var(--text-strong);
 }
 
 .medidas-table tbody tr:last-child td {
@@ -601,13 +627,12 @@ button.metric-card {
 
 .cell-primary {
   display: block;
-  font-weight: 600;
 }
 
 .cell-secondary {
   display: block;
   font-size: 12px;
-  color: var(--text-muted);
+  color: #9ca3af;
   margin-top: 2px;
 }
 
@@ -619,7 +644,7 @@ button.metric-card {
   background: var(--alert-bg);
   color: var(--alert-text);
   font-size: 13px;
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--card-border);
 }
 
@@ -636,19 +661,15 @@ button.metric-card {
 }
 
 .sap-link {
-  display: inline-block;
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--petrol-green);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--petrol-green);
+  font-size: 14px;
+  font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
 }
 
 .sap-link:hover {
-  opacity: 0.9;
+  text-decoration: underline;
 }
 
 /* ---------- Badges ---------- */

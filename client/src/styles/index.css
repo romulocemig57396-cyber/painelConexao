@@ -5,8 +5,9 @@
   --petrol-green: #1e7a5f;
   --card-bg: #f2f2f2;
   --card-border: #e0e0e0;
-  --text-body: #1f3d33;
-  --text-muted: #5a6f68;
+  --text-body: #1f2937;
+  --text-strong: #111827;
+  --text-muted: #6b7280;
 
   --late-bg: #fbe4e4;
   --late-text: #9e2b2b;
@@ -35,8 +36,8 @@ body {
 }
 
 body {
-  font-family: 'Open Sans', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #fafbfa;
+  font-family: 'Segoe UI', Roboto, 'Open Sans', Helvetica, Arial, sans-serif;
+  background: #f7f7f7;
   color: var(--text-body);
   -webkit-font-smoothing: antialiased;
 }

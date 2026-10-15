@@ -10,7 +10,7 @@ import MedidasBarChart from './components/MedidasBarChart.jsx';
 import ChipMultiFilter from './components/ChipMultiFilter.jsx';
 import InconsistenciasTable from './components/InconsistenciasTable.jsx';
 import HistoricoStackedBarChart from './components/HistoricoStackedBarChart.jsx';
-import ProdutividadeBarChart from './components/ProdutividadeBarChart.jsx';
+import { formatarDataHora } from './utils/formatters.js';
 import './styles/app.css';
 
 // Paleta validada (dataviz skill, validate_palette.js, modo claro — todos os
@@ -33,7 +33,7 @@ const CATEGORIAS_LIBERACAO = [
 // Reaproveita cores já validadas em uso no app (não geradas de novo — o
 // validador da skill dataviz não está disponível neste ambiente): verde de
 // APROVADO (positivo/meta atingida), âmbar de SERVICOS_REDE (atenção/pendente),
-// cinza neutro já usado pra "Outros"/catch-all no gráfico de produtividade.
+// cinza neutro já usado pra "Outros"/catch-all.
 
 const CATEGORIAS_UNIVERSALIZACAO = [{ key: 'UNIVERSALIZADA', label: 'Universalizada', color: '#2f9e6e' },{ key: 'NAO_UNIVERSALIZADA', label: 'Não universalizada', color: '#8a5a0b' },{ key: 'FORA_UNIVERSALIZACAO', label: 'Fora da universalização', color: '#2a78d6' },{ key: 'SEGURANCA', label: 'Obras de segurança', color: '#a02b2b' },{ key: 'OUTROS', label: 'Outros', color: '#898781' },];
 
@@ -71,7 +71,7 @@ export default function App() {
   const [medidasInicializado, setMedidasInicializado] = useState(false);
   const [situacoesSelecionadas, setSituacoesSelecionadas] = useState(SITUACOES_VENCIMENTO);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
-  const [abaAtiva, setAbaAtiva] = useState('lista');
+  const [abaAtiva, setAbaAtiva] = useState('historico');
   // Filtro de medida disparado pelos cards de métrica.
   const [cardFiltroAtivo, setCardFiltroAtivo] = useState(null);
 
@@ -115,18 +115,9 @@ export default function App() {
   const [historicoMercadoSelecionado, setHistoricoMercadoSelecionado] = useState([]);
   const historicoMercado = historicoMercadoSelecionado.length === 1 ? historicoMercadoSelecionado[0] : '';
 
-  // Gráfico de produtividade tem filtro próprio de medida (independente dos
-  // outros dois gráficos do Histórico) — busca separada, refeita a cada mudança.
-  const [historicoProdutividade, setHistoricoProdutividade] = useState([]);
-  const [historicoProdutividadeTopN, setHistoricoProdutividadeTopN] = useState(10);
-  const [produtividadeMedidasDisponiveis, setProdutividadeMedidasDisponiveis] = useState([]);
-  const [produtividadeMedidasSelecionadas, setProdutividadeMedidasSelecionadas] = useState([]);
-  const [produtividadeMedidasInicializado, setProdutividadeMedidasInicializado] = useState(false);
-  const [produtividadeLoading, setProdutividadeLoading] = useState(true);
   // Valor da obra (uma vez por nota) das notas de cada gráfico do Histórico — um card por gráfico.
   const [historicoValorObra, setHistoricoValorObra] = useState({});
   const [historicoValorObraLoading, setHistoricoValorObraLoading] = useState(true);
-  const [produtividadeError, setProdutividadeError] = useState(null);
 
   // Aba "Orçamentos emitíveis": lista independente (medida fixa, 0080 com
   // 0070 concluída) — reaproveita as opções de serviço/regional já buscadas
@@ -437,59 +428,6 @@ export default function App() {
   }, [historicoServico, historicoMercado, historicoRegionaisSelecionadas, historicoTiposSelecionados, historicoClassesSelecionadas, historicoFaixasSelecionadas]);
 
   useEffect(() => {
-    async function carregarProdutividade() {
-      setProdutividadeLoading(true);
-      setProdutividadeError(null);
-      try {
-        const params = new URLSearchParams();
-        params.set('servico', historicoServico);
-        if (historicoMercado) params.set('mercado', historicoMercado);
-        params.set('regional', historicoRegionaisSelecionadas.join(','));
-        if (historicoTiposSelecionados.length !== historicoTiposDisponiveis.length) {
-          params.set('tipoSolicitacao', historicoTiposSelecionados.join(','));
-        }
-        if (historicoClassesSelecionadas.length !== historicoClassesDisponiveis.length) {
-          params.set('classe', historicoClassesSelecionadas.join(','));
-        }
-        if (historicoFaixasSelecionadas.length !== historicoFaixasDisponiveis.length) {
-          params.set('faixaCaixas', historicoFaixasSelecionadas.join(','));
-        }
-        // Só manda "medidas" quando o usuário desmarcou alguma opção — com
-        // tudo marcado o comportamento é o mesmo de não filtrar (backend usa
-        // as 6 medidas padrão configuradas).
-        if (
-          produtividadeMedidasInicializado &&
-          produtividadeMedidasSelecionadas.length !== produtividadeMedidasDisponiveis.length
-        ) {
-          params.set('medidas', produtividadeMedidasSelecionadas.join(','));
-        }
-        const qs = params.toString();
-        const resp = await fetch(`/api/historico/produtividade${qs ? `?${qs}` : ''}`);
-        if (!resp.ok) throw new Error(`Falha na API de produtividade (${resp.status})`);
-        const json = await resp.json();
-        setHistoricoProdutividade(json.data);
-
-        if (json.regrasNegocio?.produtividade?.medidas?.length) {
-          setProdutividadeMedidasDisponiveis(json.regrasNegocio.produtividade.medidas);
-          if (!produtividadeMedidasInicializado) {
-            setProdutividadeMedidasSelecionadas(json.regrasNegocio.produtividade.medidas);
-            setProdutividadeMedidasInicializado(true);
-          }
-        }
-        if (json.regrasNegocio?.produtividade?.topN) {
-          setHistoricoProdutividadeTopN(json.regrasNegocio.produtividade.topN);
-        }
-      } catch (err) {
-        setProdutividadeError(err.message);
-      } finally {
-        setProdutividadeLoading(false);
-      }
-    }
-    carregarProdutividade();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [produtividadeMedidasSelecionadas, historicoServico, historicoMercado, historicoRegionaisSelecionadas, historicoTiposSelecionados, historicoClassesSelecionadas, historicoFaixasSelecionadas]);
-
-  useEffect(() => {
     async function carregarValorObraHistorico() {
       setHistoricoValorObraLoading(true);
       try {
@@ -505,12 +443,6 @@ export default function App() {
         }
         if (historicoFaixasSelecionadas.length !== historicoFaixasDisponiveis.length) {
           params.set('faixaCaixas', historicoFaixasSelecionadas.join(','));
-        }
-        if (
-          produtividadeMedidasInicializado &&
-          produtividadeMedidasSelecionadas.length !== produtividadeMedidasDisponiveis.length
-        ) {
-          params.set('medidas', produtividadeMedidasSelecionadas.join(','));
         }
         const resp = await fetch(`/api/historico/valor-obra?${params.toString()}`);
         if (!resp.ok) throw new Error(`Falha na API do valor da obra (${resp.status})`);
@@ -532,7 +464,6 @@ export default function App() {
     historicoTiposSelecionados,
     historicoClassesSelecionadas,
     historicoFaixasSelecionadas,
-    produtividadeMedidasSelecionadas,
   ]);
 
   useEffect(() => {
@@ -627,28 +558,114 @@ export default function App() {
     />
   );
 
+  const subtituloAtualizacao =
+    ultimaAtualizacao && (ultimaAtualizacao.DAT_ATUALIZA_DB1 || ultimaAtualizacao.DAT_ATUALIZA_DB2)
+      ? `Banco atualizado em: DB1 ${formatarDataHora(ultimaAtualizacao.DAT_ATUALIZA_DB1)} · DB2 ${formatarDataHora(ultimaAtualizacao.DAT_ATUALIZA_DB2)}`
+      : 'Cemig · SAP / DB_SGO';
+
   return (
     <>
-      <Header
-        ultimaAtualizacao={ultimaAtualizacao}
-        atualizacaoPublica={atualizacaoPublica}
-        onAtualizarPublico={atualizarPainelPublico}
-      />
+      <Header atualizacaoPublica={atualizacaoPublica} onAtualizarPublico={atualizarPainelPublico} />
       <main className="app-main">
-        {(abaAtiva === 'lista' || abaAtiva === 'graficos') && (
-          <>
-            {(abaAtiva === 'lista' || abaAtiva === 'graficos') && renderCardsMedidas()}
-            {renderFiltrosMedidas()}
-            {error && <div className="error-banner">Erro ao carregar dados: {error}</div>}
-          </>
-        )}
+        <div>
+          <h1 className="page-title">Painel interno</h1>
+          <p className="page-subtitle">{subtituloAtualizacao}</p>
+        </div>
 
         <Tabs abaAtiva={abaAtiva} onChange={setAbaAtiva} />
 
-        {abaAtiva === 'lista' && <MedidasTable rows={rows} loading={loading} />}
-
-        {abaAtiva === 'graficos' && (
+        {abaAtiva === 'historico' && (
           <>
+            <section className="filters-bar">
+              <ChipMultiFilter
+                label="Serviço"
+                opcoes={historicoServicosDisponiveis}
+                selecionadas={historicoServicoSelecionado}
+                onChange={setHistoricoServicoSelecionado}
+                wrapperClassName="filters-bar__field"
+              />
+              <ChipMultiFilter
+                label="Mercado"
+                opcoes={historicoMercadosDisponiveis}
+                selecionadas={historicoMercadoSelecionado}
+                onChange={setHistoricoMercadoSelecionado}
+                wrapperClassName="filters-bar__field"
+              />
+              <ChipMultiFilter
+                label="Regional"
+                opcoes={regionais}
+                selecionadas={historicoRegionaisSelecionadas}
+                onChange={setHistoricoRegionaisSelecionadas}
+                wrapperClassName="filters-bar__field"
+              />
+              <ChipMultiFilter
+                label="Tipo de solicitação"
+                opcoes={historicoTiposDisponiveis}
+                selecionadas={historicoTiposSelecionados}
+                onChange={setHistoricoTiposSelecionados}
+                wrapperClassName="filters-bar__field"
+              />
+              <ChipMultiFilter
+                label="Classe"
+                opcoes={historicoClassesDisponiveis}
+                selecionadas={historicoClassesSelecionadas}
+                onChange={setHistoricoClassesSelecionadas}
+                wrapperClassName="filters-bar__field"
+              />
+              <ChipMultiFilter
+                label="Número de caixas"
+                opcoes={historicoFaixasDisponiveis}
+                selecionadas={historicoFaixasSelecionadas}
+                onChange={setHistoricoFaixasSelecionadas}
+                wrapperClassName="filters-bar__field"
+              />
+            </section>
+            <div className="filters-help">Clique isola; Ctrl/Cmd+clique combina</div>
+            {historicoError && <div className="error-banner">Erro ao carregar dados: {historicoError}</div>}
+            <HistoricoStackedBarChart
+              titulo="Aprovação de pedidos (medida 0019)"
+              linhas={historicoAprovacao}
+              categorias={CATEGORIAS_APROVACAO}
+              campoCategoria="CATEGORIA"
+              loading={historicoLoading}
+              extra={
+                historicoValorObra.aprovacao && (
+                  <ValorObraCard valorObra={historicoValorObra.aprovacao} loading={historicoValorObraLoading} />
+                )
+              }
+            />
+            <HistoricoStackedBarChart
+              titulo="Tipo de liberação (medidas 0590 / 0550 / 0501)"
+              linhas={historicoLiberacao}
+              categorias={CATEGORIAS_LIBERACAO}
+              campoCategoria="TIPO"
+              loading={historicoLoading}
+              extra={
+                historicoValorObra.liberacao && (
+                  <ValorObraCard valorObra={historicoValorObra.liberacao} loading={historicoValorObraLoading} />
+                )
+              }
+            />
+            <HistoricoStackedBarChart
+              titulo="Universalização de obras (medida 0590)"
+              linhas={historicoUniversalizacao}
+              categorias={CATEGORIAS_UNIVERSALIZACAO}
+              campoCategoria="CATEGORIA"
+              loading={historicoLoading}
+              extra={
+                historicoValorObra.universalizacao && (
+                  <ValorObraCard valorObra={historicoValorObra.universalizacao} loading={historicoValorObraLoading} />
+                )
+              }
+            />
+          </>
+        )}
+
+        {abaAtiva === 'medidas' && (
+          <>
+            {renderFiltrosMedidas()}
+            {error && <div className="error-banner">Erro ao carregar dados: {error}</div>}
+            {renderCardsMedidas()}
             <ValorObraCard valorObra={valorObra} loading={loading} />
             <MedidasBarChart
               titulo="Medidas pendentes por situação de vencimento"
@@ -679,6 +696,10 @@ export default function App() {
               controlesFullscreen={renderFiltrosMedidas()}
               cardsFullscreen={renderCardsMedidas()}
             />
+            <section className="lista-secao">
+              <h2 className="section-title">Lista de medidas pendentes</h2>
+              <MedidasTable rows={rows} loading={loading} />
+            </section>
           </>
         )}
 
@@ -690,7 +711,7 @@ export default function App() {
                 opcoes={tiposInconsistencia}
                 selecionadas={tiposSelecionados}
                 onChange={setTiposSelecionados}
-                wrapperClassName="filters-bar__field filters-bar__field--full"
+                wrapperClassName="filters-bar__field"
               />
             </section>
             {inconsistenciasError && (
@@ -700,126 +721,8 @@ export default function App() {
           </>
         )}
 
-        {abaAtiva === 'historico' && (
-          <>
-            <section className="filters-bar">
-              <ChipMultiFilter
-                label="Serviço"
-                opcoes={historicoServicosDisponiveis}
-                selecionadas={historicoServicoSelecionado}
-                onChange={setHistoricoServicoSelecionado}
-                wrapperClassName="filters-bar__field filters-bar__field--full"
-              />
-              <ChipMultiFilter
-                label="Regional"
-                opcoes={regionais}
-                selecionadas={historicoRegionaisSelecionadas}
-                onChange={setHistoricoRegionaisSelecionadas}
-                wrapperClassName="filters-bar__field filters-bar__field--full"
-              />
-              <ChipMultiFilter
-                label="Tipo de solicitação"
-                opcoes={historicoTiposDisponiveis}
-                selecionadas={historicoTiposSelecionados}
-                onChange={setHistoricoTiposSelecionados}
-                wrapperClassName="filters-bar__field filters-bar__field--full"
-              />
-              <ChipMultiFilter
-                label="Classe"
-                opcoes={historicoClassesDisponiveis}
-                selecionadas={historicoClassesSelecionadas}
-                onChange={setHistoricoClassesSelecionadas}
-                wrapperClassName="filters-bar__field filters-bar__field--full"
-              />
-              <ChipMultiFilter
-                label="Número de caixas"
-                opcoes={historicoFaixasDisponiveis}
-                selecionadas={historicoFaixasSelecionadas}
-                onChange={setHistoricoFaixasSelecionadas}
-                wrapperClassName="filters-bar__field filters-bar__field--full"
-              />
-              <ChipMultiFilter
-                label="Mercado"
-                opcoes={historicoMercadosDisponiveis}
-                selecionadas={historicoMercadoSelecionado}
-                onChange={setHistoricoMercadoSelecionado}
-                wrapperClassName="filters-bar__field"
-              />
-            </section>
-            {historicoError && <div className="error-banner">Erro ao carregar dados: {historicoError}</div>}
-            {historicoValorObra.aprovacao && (
-              <ValorObraCard valorObra={historicoValorObra.aprovacao} loading={historicoValorObraLoading} />
-            )}
-            <HistoricoStackedBarChart
-              titulo="Aprovação de pedidos (medida 0019)"
-              linhas={historicoAprovacao}
-              categorias={CATEGORIAS_APROVACAO}
-              campoCategoria="CATEGORIA"
-              loading={historicoLoading}
-            />
-            {historicoValorObra.liberacao && (
-              <ValorObraCard valorObra={historicoValorObra.liberacao} loading={historicoValorObraLoading} />
-            )}
-            <HistoricoStackedBarChart
-              titulo="Tipo de liberação (medidas 0590 / 0550 / 0501)"
-              linhas={historicoLiberacao}
-              categorias={CATEGORIAS_LIBERACAO}
-              campoCategoria="TIPO"
-              loading={historicoLoading}
-            />
-            {historicoValorObra.universalizacao && (
-              <ValorObraCard valorObra={historicoValorObra.universalizacao} loading={historicoValorObraLoading} />
-            )}
-            <HistoricoStackedBarChart
-              titulo="Universalização de obras (medida 0590)"
-              linhas={historicoUniversalizacao}
-              categorias={CATEGORIAS_UNIVERSALIZACAO}
-              campoCategoria="CATEGORIA"
-              loading={historicoLoading}
-            />
-            <section className="filters-bar">
-              <ChipMultiFilter
-                label="Produtividade — filtrar por medida"
-                opcoes={produtividadeMedidasDisponiveis}
-                selecionadas={produtividadeMedidasSelecionadas}
-                onChange={setProdutividadeMedidasSelecionadas}
-                wrapperClassName="filters-bar__field filters-bar__field--full"
-              />
-            </section>
-            {produtividadeError && (
-              <div className="error-banner">Erro ao carregar dados: {produtividadeError}</div>
-            )}
-            {historicoValorObra.produtividade && (
-              <ValorObraCard valorObra={historicoValorObra.produtividade} loading={historicoValorObraLoading} />
-            )}
-            <ProdutividadeBarChart
-              titulo="Produtividade por matrícula"
-              linhas={historicoProdutividade}
-              topN={historicoProdutividadeTopN}
-              loading={produtividadeLoading}
-            />
-          </>
-        )}
-
         {abaAtiva === 'orcamentos' && (
           <>
-            <section className="filters-bar">
-              <ChipMultiFilter
-                label="Serviço"
-                opcoes={servicos}
-                selecionadas={orcamentosServicosSelecionados}
-                onChange={setOrcamentosServicosSelecionados}
-                wrapperClassName="filters-bar__field filters-bar__field--full"
-              />
-              <ChipMultiFilter
-                label="Regional"
-                opcoes={regionais}
-                selecionadas={orcamentosRegionaisSelecionadas}
-                onChange={setOrcamentosRegionaisSelecionadas}
-                wrapperClassName="filters-bar__field filters-bar__field--full"
-              />
-            </section>
-            {orcamentosError && <div className="error-banner">Erro ao carregar dados: {orcamentosError}</div>}
             {!orcamentosLoading && (
               <SituacaoCards
                 rows={orcamentos}
@@ -827,6 +730,23 @@ export default function App() {
                 onSituacaoClick={handleOrcamentosSituacaoClick}
               />
             )}
+            <section className="filters-bar">
+              <ChipMultiFilter
+                label="Serviço"
+                opcoes={servicos}
+                selecionadas={orcamentosServicosSelecionados}
+                onChange={setOrcamentosServicosSelecionados}
+                wrapperClassName="filters-bar__field"
+              />
+              <ChipMultiFilter
+                label="Regional"
+                opcoes={regionais}
+                selecionadas={orcamentosRegionaisSelecionadas}
+                onChange={setOrcamentosRegionaisSelecionadas}
+                wrapperClassName="filters-bar__field"
+              />
+            </section>
+            {orcamentosError && <div className="error-banner">Erro ao carregar dados: {orcamentosError}</div>}
             <MedidasTable rows={orcamentosFiltrados} loading={orcamentosLoading} />
           </>
         )}
