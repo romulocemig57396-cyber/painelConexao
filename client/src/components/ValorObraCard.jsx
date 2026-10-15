@@ -5,7 +5,7 @@ const formatadorReal = new Intl.NumberFormat('pt-BR', {
 });
 
 // Total do valor da obra (TBL_OBRA_CUSTOS.VAL_TOTAL_OBRA, uma vez por nota) das
-// obras que estão no gráfico, com os filtros atuais — mesmo cartão do painel externo.
+// obras que estão no gráfico, com os filtros atuais.
 export default function ValorObraCard({ valorObra, loading }) {
   const notas = valorObra?.notas ?? 0;
   return (

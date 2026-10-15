@@ -82,7 +82,6 @@ export default function App() {
   const [inconsistenciasError, setInconsistenciasError] = useState(null);
   const [tiposInconsistencia, setTiposInconsistencia] = useState([]);
   const [tiposSelecionados, setTiposSelecionados] = useState([]);
-  const [atualizacaoPublica, setAtualizacaoPublica] = useState({ status: 'idle' });
 
   // Aba "Histórico": gráficos de aprovação/liberação são independentes dos
   // filtros acima — busca uma vez só, sem relação com área/status/medida/card.
@@ -93,8 +92,8 @@ export default function App() {
   const [historicoLoading, setHistoricoLoading] = useState(true);
   const [historicoError, setHistoricoError] = useState(null);
   // Opções disponíveis de serviço/mercado da aba Histórico vêm do backend
-  // (regrasHistorico, mesma fonte usada pelo script de exportação estática),
-  // igual já é feito com "regionais" acima — evita duplicar essas listas aqui.
+  // (regrasHistorico), igual já é feito com "regionais" acima — evita
+  // duplicar essas listas aqui.
   const [historicoServicosDisponiveis, setHistoricoServicosDisponiveis] = useState([]);
   const [historicoServicoInicializado, setHistoricoServicoInicializado] = useState(false);
   const [historicoMercadosDisponiveis, setHistoricoMercadosDisponiveis] = useState([]);
@@ -159,30 +158,6 @@ export default function App() {
     setCardFiltroAtivo(filterKey);
     setMedidasSelecionadas(medidasDoCard);
   }
-
-  async function atualizarPainelPublico() {
-    if (!window.confirm('Atualizar os dados do painel externo agora?')) return;
-    try {
-      const resp = await fetch('/api/painel-publico/atualizar', { method: 'POST' });
-      const json = await resp.json();
-      if (!resp.ok) throw new Error(json.error || 'Não foi possível iniciar a atualização.');
-      setAtualizacaoPublica(json.data);
-    } catch (err) {
-      setAtualizacaoPublica({ status: 'error', error: err.message });
-    }
-  }
-
-  useEffect(() => {
-    if (atualizacaoPublica.status !== 'running') return undefined;
-    const timer = window.setInterval(async () => {
-      const resp = await fetch('/api/painel-publico/atualizacao');
-      if (!resp.ok) return;
-      const json = await resp.json();
-      setAtualizacaoPublica(json.data);
-      if (json.data.status !== 'running') window.clearInterval(timer);
-    }, 3000);
-    return () => window.clearInterval(timer);
-  }, [atualizacaoPublica.status]);
 
   async function carregarDados() {
     setLoading(true);
@@ -565,7 +540,7 @@ export default function App() {
 
   return (
     <>
-      <Header atualizacaoPublica={atualizacaoPublica} onAtualizarPublico={atualizarPainelPublico} />
+      <Header />
       <main className="app-main">
         <div>
           <h1 className="page-title">Painel interno</h1>

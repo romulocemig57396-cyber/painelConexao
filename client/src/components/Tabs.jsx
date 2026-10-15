@@ -1,4 +1,3 @@
-// Mesmas abas, na mesma ordem, do painel externo (Portal Conexão MT).
 const ABAS = [
   { key: 'historico', label: 'Histórico' },
   { key: 'medidas', label: 'Medidas Pendentes' },

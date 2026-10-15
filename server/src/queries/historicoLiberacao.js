@@ -2,8 +2,8 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams, campoNaoContemPalavra, campoIgual, medidaCasePorServico } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO, todosCodigosMedida } = require('./mapeamentoMedidaServico');
-const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
-const { DIMENSOES_FILTROS, consultaValorObra, totalValorObra } = require('./valorObra');
+const { JOIN_TIPO_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
+const { consultaValorObra, totalValorObra } = require('./valorObra');
 
 /**
  * Histórico mensal de tipo de liberação: uma categoria por medida
@@ -87,83 +87,9 @@ async function buscarHistoricoLiberacao(pool, filtros = {}, { valorObra = false 
   return result.recordset;
 }
 
-/**
- * Versão sem filtro pra exportação (ver comentário equivalente em
- * historicoAprovacao.js) — agrupa também por serviço/mercado/regional em vez
- * de só somar dentro do recorte pedido.
- */
-async function buscarHistoricoLiberacaoGranular(pool, { valorObra = false } = {}) {
-  const { liberacaoMedidas, statusCancelado, servicosDisponiveis, dataMinima } = config.regrasHistorico;
-  const { servicosRede } = liberacaoMedidas;
-
-  const request = pool.request();
-  request.input('medServicosRede', sql.NVarChar, servicosRede);
-  request.input('dataMinima', sql.Date, new Date(dataMinima));
-  const medComObrasCase = medidaCasePorServico(
-    'N.COD_SERVICO', request, 'comObras', 'comObras', MAPEAMENTO_MEDIDA_POR_SERVICO,
-  );
-  const medSemObrasCase = medidaCasePorServico(
-    'N.COD_SERVICO', request, 'semObras', 'semObras', MAPEAMENTO_MEDIDA_POR_SERVICO,
-  );
-  const medidasInClause = inClauseParams(request, 'lm_', [
-    ...todosCodigosMedida('comObras'),
-    ...todosCodigosMedida('semObras'),
-    servicosRede,
-  ]);
-  const servicoInClause = inClauseParams(request, 'sv_', servicosDisponiveis);
-  const condNaoCancelado = campoNaoContemPalavra('M.COD_STAT_USU', request, 'stCanc', statusCancelado);
-
-  const interna = `
-        SELECT
-            N.NUM_NOTA,
-            FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
-            N.COD_SERVICO AS SERVICO,
-            N.DES_MERCADO AS MERCADO,
-            L.COD_SP AS REGIONAL,
-            ${COLUNAS_SOLICITACAO},
-            CASE
-                WHEN M.COD_MEDIDA = ${medComObrasCase} THEN 'COM_OBRAS'
-                WHEN M.COD_MEDIDA = ${medSemObrasCase} THEN 'SEM_OBRAS'
-                WHEN M.COD_MEDIDA = @medServicosRede THEN 'SERVICOS_REDE'
-            END AS TIPO
-        FROM TBL_MEDIDAS M
-        INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
-        ${JOIN_TIPO_SOLICITACAO}
-        INNER JOIN TBL_LOCAIS L ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
-        WHERE M.COD_MEDIDA IN (${medidasInClause})
-          AND N.COD_SERVICO IN (${servicoInClause})
-          AND M.DAT_TREAL >= @dataMinima
-          AND ${condNaoCancelado}
-`;
-
-  const query = valorObra
-    ? consultaValorObra(interna, 'TIPO', DIMENSOES_FILTROS)
-    : `
-    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, TIPO, COUNT(*) AS QTD
-    FROM (${interna}
-    ) X
-    WHERE TIPO IS NOT NULL
-    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, TIPO
-    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, TIPO;
-  `;
-
-  const result = await request.query(query);
-  return result.recordset;
-}
-
 /** Valor da obra das notas do gráfico (um total só), com os mesmos filtros de buscarHistoricoLiberacao. */
 async function buscarValorObraLiberacao(pool, filtros = {}) {
   return totalValorObra(await buscarHistoricoLiberacao(pool, filtros, { valorObra: true }));
 }
 
-/** Valor da obra por combinação dos filtros do painel externo (exportação). */
-function buscarValorObraLiberacaoGranular(pool) {
-  return buscarHistoricoLiberacaoGranular(pool, { valorObra: true });
-}
-
-module.exports = {
-  buscarHistoricoLiberacao,
-  buscarHistoricoLiberacaoGranular,
-  buscarValorObraLiberacao,
-  buscarValorObraLiberacaoGranular,
-};
+module.exports = { buscarHistoricoLiberacao, buscarValorObraLiberacao };

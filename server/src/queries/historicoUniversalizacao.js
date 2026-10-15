@@ -2,8 +2,8 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams, campoNaoContemPalavra, campoIgual, medidaCasePorServico } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO } = require('./mapeamentoMedidaServico');
-const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
-const { DIMENSOES_FILTROS, consultaValorObra, totalValorObra } = require('./valorObra');
+const { JOIN_TIPO_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
+const { consultaValorObra, totalValorObra } = require('./valorObra');
 
 /**
  * Histórico mensal de universalização de obras: notas com a medida "com
@@ -79,79 +79,9 @@ async function buscarHistoricoUniversalizacao(pool, filtros = {}, { valorObra = 
   return result.recordset;
 }
 
-/**
- * Versão sem filtro pra exportação (ver comentário equivalente em
- * historicoAprovacao.js) — agrupa também por serviço/mercado/regional em vez
- * de só somar dentro do recorte pedido.
- */
-async function buscarHistoricoUniversalizacaoGranular(pool, { valorObra = false } = {}) {
-  const { statusCancelado, servicosDisponiveis, dataMinima, universalizacao } = config.regrasHistorico;
-  const { universalizadaCodigos, naoUniversalizadaCodigos, foraUniversalizacaoCodigos, segurancaCodigos } = universalizacao;
-
-  const request = pool.request();
-  request.input('dataMinima', sql.Date, new Date(dataMinima));
-  const medComObrasCase = medidaCasePorServico(
-    'N.COD_SERVICO', request, 'comObras', 'comObras', MAPEAMENTO_MEDIDA_POR_SERVICO,
-  );
-  const universalizadaInClause = inClauseParams(request, 'univ_', universalizadaCodigos);
-  const naoUniversalizadaInClause = inClauseParams(request, 'naoUniv_', naoUniversalizadaCodigos);
-  const foraUniversalizacaoInClause = inClauseParams(request, 'foraUniv_', foraUniversalizacaoCodigos);
-  const segurancaInClause = inClauseParams(request, 'seg_', segurancaCodigos);
-  const servicoInClause = inClauseParams(request, 'sv_', servicosDisponiveis);
-  const condNaoCancelado = campoNaoContemPalavra('M.COD_STAT_USU', request, 'stCanc', statusCancelado);
-
-  const interna = `
-        SELECT
-            N.NUM_NOTA,
-            FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
-            N.COD_SERVICO AS SERVICO,
-            N.DES_MERCADO AS MERCADO,
-            L.COD_SP AS REGIONAL,
-            ${COLUNAS_SOLICITACAO},
-            CASE
-                WHEN N.COD_UNIVERSALIZACAO IN (${universalizadaInClause}) THEN 'UNIVERSALIZADA'
-                WHEN N.COD_UNIVERSALIZACAO IN (${naoUniversalizadaInClause}) THEN 'NAO_UNIVERSALIZADA'
-                WHEN N.COD_UNIVERSALIZACAO IN (${foraUniversalizacaoInClause}) THEN 'FORA_UNIVERSALIZACAO'
-                WHEN N.COD_UNIVERSALIZACAO IN (${segurancaInClause}) THEN 'SEGURANCA'
-                ELSE 'OUTROS'
-            END AS CATEGORIA
-        FROM TBL_MEDIDAS M
-        INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
-        ${JOIN_TIPO_SOLICITACAO}
-        INNER JOIN TBL_LOCAIS L ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
-        WHERE M.COD_MEDIDA = ${medComObrasCase}
-          AND N.COD_SERVICO IN (${servicoInClause})
-          AND M.DAT_TREAL >= @dataMinima
-          AND ${condNaoCancelado}
-`;
-
-  const query = valorObra
-    ? consultaValorObra(interna, 'CATEGORIA', DIMENSOES_FILTROS)
-    : `
-    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA, COUNT(*) AS QTD
-    FROM (${interna}
-    ) X
-    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA
-    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, CATEGORIA;
-  `;
-
-  const result = await request.query(query);
-  return result.recordset;
-}
-
 /** Valor da obra das notas do gráfico (um total só), com os mesmos filtros de buscarHistoricoUniversalizacao. */
 async function buscarValorObraUniversalizacao(pool, filtros = {}) {
   return totalValorObra(await buscarHistoricoUniversalizacao(pool, filtros, { valorObra: true }));
 }
 
-/** Valor da obra por combinação dos filtros do painel externo (exportação). */
-function buscarValorObraUniversalizacaoGranular(pool) {
-  return buscarHistoricoUniversalizacaoGranular(pool, { valorObra: true });
-}
-
-module.exports = {
-  buscarHistoricoUniversalizacao,
-  buscarHistoricoUniversalizacaoGranular,
-  buscarValorObraUniversalizacao,
-  buscarValorObraUniversalizacaoGranular,
-};
+module.exports = { buscarHistoricoUniversalizacao, buscarValorObraUniversalizacao };

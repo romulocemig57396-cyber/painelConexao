@@ -1,6 +1,6 @@
 // Contagem por situação (mesmas 6 categorias de SITUACOES_VENCIMENTO em
 // App.jsx), com clique-isola — clicar de novo no card ativo limpa o filtro.
-// Cores iguais às do painel externo (SITUACAO_META).
+// Cores das situações de vencimento.
 const SITUACAO_DEFS = [
   { situacao: 'PENDENTES', label: 'Pendentes', cor: '#4a3aa7' },
   { situacao: 'EM ATRASO', label: 'Em atraso', cor: '#a02b2b' },

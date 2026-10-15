@@ -5,7 +5,6 @@ const globals = require('globals');
 // eslint.config.js do client: pega erros reais (variável não declarada,
 // require não usado, etc.), sem regra de estilo.
 module.exports = [
-  { ignores: ['logs/**'] },
   {
     files: ['**/*.js'],
     languageOptions: {

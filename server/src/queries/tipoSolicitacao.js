@@ -29,11 +29,6 @@ const FAIXA_CAIXAS = `CASE
             ELSE '4 OU MAIS'
         END`;
 
-// Colunas prontas pros SELECTs granulares da exportação (painel externo).
-const COLUNAS_SOLICITACAO = `${TIPO_SOLICITACAO} AS TIPO_SOLICITACAO,
-            ${CLASSE} AS CLASSE,
-            ${FAIXA_CAIXAS} AS FAIXA_CAIXAS`;
-
 /**
  * Condições `AND <expr> IN (...)` pros filtros de tipo de solicitação, classe e
  * faixa de caixas — string vazia pra cada filtro não informado (lista
@@ -59,6 +54,5 @@ module.exports = {
   TIPO_SOLICITACAO,
   CLASSE,
   FAIXA_CAIXAS,
-  COLUNAS_SOLICITACAO,
   condFiltrosSolicitacao,
 };

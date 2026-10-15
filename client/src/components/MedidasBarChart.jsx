@@ -22,8 +22,7 @@ function montarDadosGrafico(resumo, categorias, situacaoList, campoCategoria) {
       linha[situacao] = encontrado ? encontrado.QUANTIDADE : 0;
       bruto[situacao] = linha[situacao];
     });
-    // Mesmos rótulos do painel externo: % de cada situação dentro da barra e o
-    // total acima dela.
+    // Rótulos: % de cada situação dentro da barra e o total acima dela.
     linha._bruto = bruto;
     linha._total = Object.values(bruto).reduce((soma, qtd) => soma + qtd, 0);
     return linha;
