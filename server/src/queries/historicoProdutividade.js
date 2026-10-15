@@ -2,6 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams, campoIgual } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO, substituirMedidasPorServico } = require('./mapeamentoMedidaServico');
+const { JOIN_TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
 
 /**
  * Histórico mensal de produtividade por matrícula (COD_RESP_CONC): conta
@@ -50,6 +51,7 @@ async function buscarHistoricoProdutividade(pool, filtros = {}) {
     ? campoIgual('N.DES_MERCADO', request, 'mercado', filtros.mercado)
     : '1=1';
   const condRegional = regionalInClause ? `AND L.COD_SP IN (${regionalInClause})` : '';
+  const condTipo = condTipoSolicitacao(request, filtros.tipoSolicitacao);
 
   const query = `
     WITH Contagem AS (
@@ -59,12 +61,14 @@ async function buscarHistoricoProdutividade(pool, filtros = {}) {
             COUNT(*) AS QTD_CONCLUIDAS
         FROM TBL_MEDIDAS M
         INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
+        ${JOIN_TIPO_SOLICITACAO}
         INNER JOIN TBL_LOCAIS L ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
         WHERE ${condMedidaPorServico}
           AND N.COD_SERVICO IN (${servicoInClause})
           AND M.DAT_TREAL >= @dataMinima
           AND ${condMercado}
           ${condRegional}
+          ${condTipo}
         GROUP BY FORMAT(M.DAT_TREAL, 'yyyy-MM'), M.COD_RESP_CONC
     ),
     Ranking AS (

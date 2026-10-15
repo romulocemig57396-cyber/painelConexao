@@ -54,6 +54,8 @@ export default function App() {
   const [error, setError] = useState(null);
   const [servicos, setServicos] = useState([]);
   const [servicosSelecionados, setServicosSelecionados] = useState([]);
+  const [tiposSolicitacao, setTiposSolicitacao] = useState([]);
+  const [tiposSolicitacaoSelecionados, setTiposSolicitacaoSelecionados] = useState([]);
   const [regionais, setRegionais] = useState([]);
   const [regionaisSelecionadas, setRegionaisSelecionadas] = useState([]);
   const [historicoRegionaisSelecionadas, setHistoricoRegionaisSelecionadas] = useState([]);
@@ -91,6 +93,8 @@ export default function App() {
   const [historicoServicoInicializado, setHistoricoServicoInicializado] = useState(false);
   const [historicoMercadosDisponiveis, setHistoricoMercadosDisponiveis] = useState([]);
   const [historicoMercadoInicializado, setHistoricoMercadoInicializado] = useState(false);
+  const [historicoTiposDisponiveis, setHistoricoTiposDisponiveis] = useState([]);
+  const [historicoTiposSelecionados, setHistoricoTiposSelecionados] = useState([]);
   // ChipMultiFilter trabalha com array de selecionadas. Serviço começa só com
   // COMT (preserva o comportamento/carga de antes); "Todos" soma os
   // códigos disponíveis (servico vira lista pro backend, sem default implícito).
@@ -134,6 +138,7 @@ export default function App() {
   function limparFiltros() {
     setServicosSelecionados(servicos);
     setRegionaisSelecionadas(regionais);
+    setTiposSolicitacaoSelecionados(tiposSolicitacao);
     setMedidasSelecionadas(medidasGrupo1);
     setSituacoesSelecionadas(SITUACOES_VENCIMENTO);
     setCardFiltroAtivo(null);
@@ -184,6 +189,9 @@ export default function App() {
       if (regionaisSelecionadas.length !== regionais.length) {
         params.set('regional', regionaisSelecionadas.join(','));
       }
+      if (tiposSolicitacaoSelecionados.length !== tiposSolicitacao.length) {
+        params.set('tipoSolicitacao', tiposSolicitacaoSelecionados.join(','));
+      }
       // Só manda "medidas" quando o usuário desmarcou alguma opção — com tudo
       // marcado o comportamento é o mesmo de não filtrar (usa o grupo 1 padrão do backend).
       if (medidasInicializado && medidasSelecionadas.length !== medidasGrupo1.length) {
@@ -206,6 +214,9 @@ export default function App() {
       }
       if (regionaisSelecionadas.length !== regionais.length) {
         paramsGrupo2.set('regional', regionaisSelecionadas.join(','));
+      }
+      if (tiposSolicitacaoSelecionados.length !== tiposSolicitacao.length) {
+        paramsGrupo2.set('tipoSolicitacao', tiposSolicitacaoSelecionados.join(','));
       }
       const qsGrupo2 = paramsGrupo2.toString();
 
@@ -239,6 +250,10 @@ export default function App() {
       if (json.regrasNegocio?.grupo2Medidas?.length) {
         setMedidasGrupo2(json.regrasNegocio.grupo2Medidas);
       }
+      if (json.regrasNegocio?.tiposSolicitacaoDisponiveis?.length && !tiposSolicitacao.length) {
+        setTiposSolicitacao(json.regrasNegocio.tiposSolicitacaoDisponiveis);
+        setTiposSolicitacaoSelecionados(json.regrasNegocio.tiposSolicitacaoDisponiveis);
+      }
       if (json.regrasNegocio?.codServicoFiltro?.length) {
         const servicosDisponiveis = json.regrasNegocio.codServicoFiltro;
         const servicosIniciais = servicosDisponiveis.filter((servico) => !['PSAA', 'PSAI'].includes(servico));
@@ -259,7 +274,7 @@ export default function App() {
   useEffect(() => {
     carregarDados();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [medidasSelecionadas, servicosSelecionados, regionaisSelecionadas, situacoesSelecionadas, cardFiltroAtivo]);
+  }, [medidasSelecionadas, servicosSelecionados, regionaisSelecionadas, tiposSolicitacaoSelecionados, situacoesSelecionadas, cardFiltroAtivo]);
 
   useEffect(() => {
     async function carregarOpcoes() {
@@ -318,6 +333,9 @@ export default function App() {
         params.set('servico', historicoServico);
         if (historicoMercado) params.set('mercado', historicoMercado);
         params.set('regional', historicoRegionaisSelecionadas.join(','));
+        if (historicoTiposSelecionados.length !== historicoTiposDisponiveis.length) {
+          params.set('tipoSolicitacao', historicoTiposSelecionados.join(','));
+        }
         const qs = params.toString();
         const [respAprovacao, respLiberacao, respUniversalizacao] = await Promise.all([
           fetch(`/api/historico/aprovacao?${qs}`),
@@ -343,6 +361,10 @@ export default function App() {
             setHistoricoServicoInicializado(true);
           }
         }
+        if (jsonAprovacao.regrasNegocio?.tiposSolicitacaoDisponiveis?.length && !historicoTiposDisponiveis.length) {
+          setHistoricoTiposDisponiveis(jsonAprovacao.regrasNegocio.tiposSolicitacaoDisponiveis);
+          setHistoricoTiposSelecionados(jsonAprovacao.regrasNegocio.tiposSolicitacaoDisponiveis);
+        }
         if (jsonAprovacao.regrasNegocio?.mercadosDisponiveis?.length) {
           const disponiveis = jsonAprovacao.regrasNegocio.mercadosDisponiveis;
           setHistoricoMercadosDisponiveis(disponiveis);
@@ -359,7 +381,7 @@ export default function App() {
     }
     carregarHistorico();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [historicoServico, historicoMercado, historicoRegionaisSelecionadas]);
+  }, [historicoServico, historicoMercado, historicoRegionaisSelecionadas, historicoTiposSelecionados]);
 
   useEffect(() => {
     async function carregarProdutividade() {
@@ -370,6 +392,9 @@ export default function App() {
         params.set('servico', historicoServico);
         if (historicoMercado) params.set('mercado', historicoMercado);
         params.set('regional', historicoRegionaisSelecionadas.join(','));
+        if (historicoTiposSelecionados.length !== historicoTiposDisponiveis.length) {
+          params.set('tipoSolicitacao', historicoTiposSelecionados.join(','));
+        }
         // Só manda "medidas" quando o usuário desmarcou alguma opção — com
         // tudo marcado o comportamento é o mesmo de não filtrar (backend usa
         // as 6 medidas padrão configuradas).
@@ -403,7 +428,7 @@ export default function App() {
     }
     carregarProdutividade();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [produtividadeMedidasSelecionadas, historicoServico, historicoMercado, historicoRegionaisSelecionadas]);
+  }, [produtividadeMedidasSelecionadas, historicoServico, historicoMercado, historicoRegionaisSelecionadas, historicoTiposSelecionados]);
 
   useEffect(() => {
     // "servicos" já é buscado pra aba Lista (carregarDados) — só espera
@@ -466,6 +491,9 @@ export default function App() {
       regionais={regionais}
       regionaisSelecionadas={regionaisSelecionadas}
       onRegionaisChange={setRegionaisSelecionadas}
+      tiposSolicitacao={tiposSolicitacao}
+      tiposSolicitacaoSelecionados={tiposSolicitacaoSelecionados}
+      onTiposSolicitacaoChange={setTiposSolicitacaoSelecionados}
       medidasGrupo1={medidasGrupo1}
       medidasSelecionadas={medidasSelecionadas}
       onMedidasChange={setMedidasSelecionadas}
@@ -575,6 +603,13 @@ export default function App() {
                 opcoes={regionais}
                 selecionadas={historicoRegionaisSelecionadas}
                 onChange={setHistoricoRegionaisSelecionadas}
+                wrapperClassName="filters-bar__field filters-bar__field--full"
+              />
+              <ChipMultiFilter
+                label="Tipo de solicitação"
+                opcoes={historicoTiposDisponiveis}
+                selecionadas={historicoTiposSelecionados}
+                onChange={setHistoricoTiposSelecionados}
                 wrapperClassName="filters-bar__field filters-bar__field--full"
               />
               <ChipMultiFilter

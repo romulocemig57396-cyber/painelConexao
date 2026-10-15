@@ -7,6 +7,9 @@ export default function Filters({
   regionais,
   regionaisSelecionadas,
   onRegionaisChange,
+  tiposSolicitacao,
+  tiposSolicitacaoSelecionados,
+  onTiposSolicitacaoChange,
   medidasGrupo1,
   medidasSelecionadas,
   onMedidasChange,
@@ -19,6 +22,7 @@ export default function Filters({
   const temFiltroAtivo =
     servicosSelecionados.length !== servicos.length ||
     regionaisSelecionadas.length !== regionais.length ||
+    tiposSolicitacaoSelecionados.length !== tiposSolicitacao.length ||
     medidasSelecionadas.length !== medidasGrupo1.length ||
     situacoesSelecionadas.length !== situacoesVencimento.length ||
     cardFiltroAtivo;
@@ -37,6 +41,13 @@ export default function Filters({
         opcoes={servicos}
         selecionadas={servicosSelecionados}
         onChange={onServicosChange}
+        wrapperClassName="filters-bar__field filters-bar__field--full"
+      />
+      <ChipMultiFilter
+        label="Tipo de solicitação"
+        opcoes={tiposSolicitacao}
+        selecionadas={tiposSolicitacaoSelecionados}
+        onChange={onTiposSolicitacaoChange}
         wrapperClassName="filters-bar__field filters-bar__field--full"
       />
       <ChipMultiFilter

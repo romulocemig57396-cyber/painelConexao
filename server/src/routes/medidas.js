@@ -24,16 +24,19 @@ router.get('/medidas/opcoes', async (_req, res) => {
 
 router.get('/medidas/resumo-0070-regional', async (req, res) => {
   try {
-    const { servico, regional } = req.query;
+    const { servico, regional, tipoSolicitacao } = req.query;
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
-    if ((servicoFiltro && servicoFiltro.length === 0) || (regionalFiltro && regionalFiltro.length === 0)) {
+    const tipoSolicitacaoFiltro = parseListaFiltro(tipoSolicitacao);
+    if ((servicoFiltro && servicoFiltro.length === 0) || (regionalFiltro && regionalFiltro.length === 0)
+      || (tipoSolicitacaoFiltro && tipoSolicitacaoFiltro.length === 0)) {
       return res.json({ data: [] });
     }
     const pool = await getPool();
     const data = await buscarResumoMedida0070Regional(pool, {
       servico: servicoFiltro,
       regional: regionalFiltro,
+      tipoSolicitacao: tipoSolicitacaoFiltro,
     });
     res.json({ data });
   } catch (err) {
@@ -44,13 +47,15 @@ router.get('/medidas/resumo-0070-regional', async (req, res) => {
 
 router.get('/medidas', async (req, res) => {
   try {
-    const { area, status, medidas, servico, regional, situacao, grupo2 } = req.query;
+    const { area, status, medidas, servico, regional, situacao, grupo2, tipoSolicitacao } = req.query;
     const medidasFiltro = parseListaFiltro(medidas);
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
     const situacaoFiltro = parseListaFiltro(situacao);
+    const tipoSolicitacaoFiltro = parseListaFiltro(tipoSolicitacao);
     if ((medidasFiltro && medidasFiltro.length === 0) || (servicoFiltro && servicoFiltro.length === 0)
-      || (regionalFiltro && regionalFiltro.length === 0) || (situacaoFiltro && situacaoFiltro.length === 0)) {
+      || (regionalFiltro && regionalFiltro.length === 0) || (situacaoFiltro && situacaoFiltro.length === 0)
+      || (tipoSolicitacaoFiltro && tipoSolicitacaoFiltro.length === 0)) {
       return res.json({ total: 0, regrasNegocio: config.regrasNegocio, data: [] });
     }
 
@@ -62,6 +67,7 @@ router.get('/medidas', async (req, res) => {
       servico: servicoFiltro,
       regional: regionalFiltro,
       situacao: situacaoFiltro,
+      tipoSolicitacao: tipoSolicitacaoFiltro,
       grupo2: grupo2 === 'SIM',
     });
 
@@ -85,13 +91,15 @@ router.get('/medidas', async (req, res) => {
 // mesmos filtros (area/status/medidas) de /medidas — usada pelo gráfico de barras.
 router.get('/medidas/resumo', async (req, res) => {
   try {
-    const { area, status, medidas, servico, regional, situacao, grupo2 } = req.query;
+    const { area, status, medidas, servico, regional, situacao, grupo2, tipoSolicitacao } = req.query;
     const medidasFiltro = parseListaFiltro(medidas);
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
     const situacaoFiltro = parseListaFiltro(situacao);
+    const tipoSolicitacaoFiltro = parseListaFiltro(tipoSolicitacao);
     if ((medidasFiltro && medidasFiltro.length === 0) || (servicoFiltro && servicoFiltro.length === 0)
-      || (regionalFiltro && regionalFiltro.length === 0) || (situacaoFiltro && situacaoFiltro.length === 0)) {
+      || (regionalFiltro && regionalFiltro.length === 0) || (situacaoFiltro && situacaoFiltro.length === 0)
+      || (tipoSolicitacaoFiltro && tipoSolicitacaoFiltro.length === 0)) {
       return res.json({ regrasNegocio: config.regrasNegocio, data: [] });
     }
 
@@ -103,6 +111,7 @@ router.get('/medidas/resumo', async (req, res) => {
       servico: servicoFiltro,
       regional: regionalFiltro,
       situacao: situacaoFiltro,
+      tipoSolicitacao: tipoSolicitacaoFiltro,
       grupo2: grupo2 === 'SIM',
     });
 
@@ -117,15 +126,17 @@ router.get('/medidas/resumo', async (req, res) => {
 // pelo segundo gráfico da aba "Gráficos" ("Medidas pendentes — Áreas envolvidas").
 router.get('/medidas/resumo-grupo2', async (req, res) => {
   try {
-    const { area, status, servico, regional } = req.query;
+    const { area, status, servico, regional, tipoSolicitacao } = req.query;
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
-    if ((servicoFiltro && servicoFiltro.length === 0) || (regionalFiltro && regionalFiltro.length === 0)) {
+    const tipoSolicitacaoFiltro = parseListaFiltro(tipoSolicitacao);
+    if ((servicoFiltro && servicoFiltro.length === 0) || (regionalFiltro && regionalFiltro.length === 0)
+      || (tipoSolicitacaoFiltro && tipoSolicitacaoFiltro.length === 0)) {
       return res.json({ regrasNegocio: config.regrasNegocio, data: [] });
     }
     const pool = await getPool();
     const resumo = await buscarResumoGrupo2(pool, {
-      area, status, servico: servicoFiltro, regional: regionalFiltro,
+      area, status, servico: servicoFiltro, regional: regionalFiltro, tipoSolicitacao: tipoSolicitacaoFiltro,
     });
     res.json({ regrasNegocio: config.regrasNegocio, data: resumo });
   } catch (err) {

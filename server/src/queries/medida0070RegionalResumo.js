@@ -1,6 +1,7 @@
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
 const { SITUACAO_PRAZO_0070 } = require('./regulatorio');
+const { JOIN_TIPO_SOLICITACAO, TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
 
 async function buscarResumoMedida0070Regional(pool, filtros = {}) {
   const { grupo1Medidas, statusPendente, codServicoFiltro: servicosPadrao } = config.regrasNegocio;
@@ -12,9 +13,8 @@ async function buscarResumoMedida0070Regional(pool, filtros = {}) {
   const statusInClause = inClauseParams(request, 'st_', statusPendente);
   const regionalInClause = regionais ? inClauseParams(request, 'rg_', regionais) : null;
 
-  const filtrosExtras = regionalInClause
-    ? `AND L.COD_SP IN (${regionalInClause})`
-    : '';
+  const filtrosExtras = `${regionalInClause ? `AND L.COD_SP IN (${regionalInClause})` : ''}
+      ${condTipoSolicitacao(request, filtros.tipoSolicitacao)}`;
   const query = `
     SELECT
         L.COD_SP AS REGIONAL,
@@ -22,6 +22,7 @@ async function buscarResumoMedida0070Regional(pool, filtros = {}) {
         COUNT(*) AS QUANTIDADE
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N ON M.NUM_NOTA = N.NUM_NOTA
+    ${JOIN_TIPO_SOLICITACAO}
     INNER JOIN TBL_LOCAIS L
         ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
     WHERE M.COD_MEDIDA = '0070'
@@ -56,10 +57,12 @@ async function buscarResumoMedida0070RegionalGranular(pool) {
     SELECT
         N.COD_SERVICO AS SERVICO,
         L.COD_SP AS REGIONAL,
+        ${TIPO_SOLICITACAO} AS TIPO_SOLICITACAO,
         ${SITUACAO_PRAZO_0070} AS DES_SITUACAO,
         COUNT(*) AS QUANTIDADE
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N ON M.NUM_NOTA = N.NUM_NOTA
+    ${JOIN_TIPO_SOLICITACAO}
     INNER JOIN TBL_LOCAIS L
         ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
     WHERE M.COD_MEDIDA = '0070'
@@ -72,8 +75,8 @@ async function buscarResumoMedida0070RegionalGranular(pool) {
           AND M1.COD_MEDIDA IN (${grupo1InClause})
           AND M1.COD_STAT_USU IN (${statusInClause})
       )
-    GROUP BY N.COD_SERVICO, L.COD_SP, ${SITUACAO_PRAZO_0070}
-    ORDER BY SERVICO, REGIONAL, DES_SITUACAO;
+    GROUP BY N.COD_SERVICO, L.COD_SP, ${TIPO_SOLICITACAO}, ${SITUACAO_PRAZO_0070}
+    ORDER BY SERVICO, REGIONAL, TIPO_SOLICITACAO, DES_SITUACAO;
   `;
 
   const result = await request.query(query);

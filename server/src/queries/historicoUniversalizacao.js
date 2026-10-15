@@ -2,6 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams, campoNaoContemPalavra, campoIgual, medidaCasePorServico } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO } = require('./mapeamentoMedidaServico');
+const { JOIN_TIPO_SOLICITACAO, TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
 
 /**
  * Histórico mensal de universalização de obras: notas com a medida "com
@@ -37,6 +38,7 @@ async function buscarHistoricoUniversalizacao(pool, filtros = {}) {
     ? campoIgual('N.DES_MERCADO', request, 'mercado', filtros.mercado)
     : '1=1';
   const condRegional = regionalInClause ? `AND L.COD_SP IN (${regionalInClause})` : '';
+  const condTipo = condTipoSolicitacao(request, filtros.tipoSolicitacao);
 
   const query = `
     SELECT MES, CATEGORIA, COUNT(*) AS QTD
@@ -52,6 +54,7 @@ async function buscarHistoricoUniversalizacao(pool, filtros = {}) {
             END AS CATEGORIA
         FROM TBL_MEDIDAS M
         INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
+        ${JOIN_TIPO_SOLICITACAO}
         INNER JOIN TBL_LOCAIS L ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
         WHERE M.COD_MEDIDA = ${medComObrasCase}
           AND N.COD_SERVICO IN (${servicoInClause})
@@ -59,6 +62,7 @@ async function buscarHistoricoUniversalizacao(pool, filtros = {}) {
           AND ${condNaoCancelado}
           AND ${condMercado}
           ${condRegional}
+          ${condTipo}
     ) X
     GROUP BY MES, CATEGORIA
     ORDER BY MES, CATEGORIA;
@@ -90,13 +94,14 @@ async function buscarHistoricoUniversalizacaoGranular(pool) {
   const condNaoCancelado = campoNaoContemPalavra('M.COD_STAT_USU', request, 'stCanc', statusCancelado);
 
   const query = `
-    SELECT MES, SERVICO, MERCADO, REGIONAL, CATEGORIA, COUNT(*) AS QTD
+    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CATEGORIA, COUNT(*) AS QTD
     FROM (
         SELECT
             FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
             N.COD_SERVICO AS SERVICO,
             N.DES_MERCADO AS MERCADO,
             L.COD_SP AS REGIONAL,
+            ${TIPO_SOLICITACAO} AS TIPO_SOLICITACAO,
             CASE
                 WHEN N.COD_UNIVERSALIZACAO IN (${universalizadaInClause}) THEN 'UNIVERSALIZADA'
                 WHEN N.COD_UNIVERSALIZACAO IN (${naoUniversalizadaInClause}) THEN 'NAO_UNIVERSALIZADA'
@@ -106,14 +111,15 @@ async function buscarHistoricoUniversalizacaoGranular(pool) {
             END AS CATEGORIA
         FROM TBL_MEDIDAS M
         INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
+        ${JOIN_TIPO_SOLICITACAO}
         INNER JOIN TBL_LOCAIS L ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
         WHERE M.COD_MEDIDA = ${medComObrasCase}
           AND N.COD_SERVICO IN (${servicoInClause})
           AND M.DAT_TREAL >= @dataMinima
           AND ${condNaoCancelado}
     ) X
-    GROUP BY MES, SERVICO, MERCADO, REGIONAL, CATEGORIA
-    ORDER BY MES, SERVICO, MERCADO, REGIONAL, CATEGORIA;
+    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CATEGORIA
+    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CATEGORIA;
   `;
 
   const result = await request.query(query);

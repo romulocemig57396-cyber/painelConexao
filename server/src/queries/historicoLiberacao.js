@@ -2,6 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams, campoNaoContemPalavra, campoIgual, medidaCasePorServico } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO, todosCodigosMedida } = require('./mapeamentoMedidaServico');
+const { JOIN_TIPO_SOLICITACAO, TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
 
 /**
  * Histórico mensal de tipo de liberação: uma categoria por medida
@@ -46,6 +47,7 @@ async function buscarHistoricoLiberacao(pool, filtros = {}) {
     ? campoIgual('N.DES_MERCADO', request, 'mercado', filtros.mercado)
     : '1=1';
   const condRegional = regionalInClause ? `AND L.COD_SP IN (${regionalInClause})` : '';
+  const condTipo = condTipoSolicitacao(request, filtros.tipoSolicitacao);
 
   const query = `
     SELECT MES, TIPO, COUNT(*) AS QTD
@@ -59,6 +61,7 @@ async function buscarHistoricoLiberacao(pool, filtros = {}) {
             END AS TIPO
         FROM TBL_MEDIDAS M
         INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
+        ${JOIN_TIPO_SOLICITACAO}
         INNER JOIN TBL_LOCAIS L ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
         WHERE M.COD_MEDIDA IN (${medidasInClause})
           AND N.COD_SERVICO IN (${servicoInClause})
@@ -66,6 +69,7 @@ async function buscarHistoricoLiberacao(pool, filtros = {}) {
           AND ${condNaoCancelado}
           AND ${condMercado}
           ${condRegional}
+          ${condTipo}
     ) X
     WHERE TIPO IS NOT NULL
     GROUP BY MES, TIPO
@@ -103,13 +107,14 @@ async function buscarHistoricoLiberacaoGranular(pool) {
   const condNaoCancelado = campoNaoContemPalavra('M.COD_STAT_USU', request, 'stCanc', statusCancelado);
 
   const query = `
-    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO, COUNT(*) AS QTD
+    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, TIPO, COUNT(*) AS QTD
     FROM (
         SELECT
             FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
             N.COD_SERVICO AS SERVICO,
             N.DES_MERCADO AS MERCADO,
             L.COD_SP AS REGIONAL,
+            ${TIPO_SOLICITACAO} AS TIPO_SOLICITACAO,
             CASE
                 WHEN M.COD_MEDIDA = ${medComObrasCase} THEN 'COM_OBRAS'
                 WHEN M.COD_MEDIDA = ${medSemObrasCase} THEN 'SEM_OBRAS'
@@ -117,6 +122,7 @@ async function buscarHistoricoLiberacaoGranular(pool) {
             END AS TIPO
         FROM TBL_MEDIDAS M
         INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
+        ${JOIN_TIPO_SOLICITACAO}
         INNER JOIN TBL_LOCAIS L ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
         WHERE M.COD_MEDIDA IN (${medidasInClause})
           AND N.COD_SERVICO IN (${servicoInClause})
@@ -124,8 +130,8 @@ async function buscarHistoricoLiberacaoGranular(pool) {
           AND ${condNaoCancelado}
     ) X
     WHERE TIPO IS NOT NULL
-    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO
-    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO;
+    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, TIPO
+    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, TIPO;
   `;
 
   const result = await request.query(query);

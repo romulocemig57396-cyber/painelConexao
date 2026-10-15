@@ -2,6 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
 const { APPLY_REGULATORIO, SITUACAO_REGULATORIA } = require('./regulatorio');
+const { JOIN_TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
 
 /**
  * Mesma regra de negócio de buscarMedidasPendentes (grupo1/status/COD_SERVICO,
@@ -46,6 +47,7 @@ async function buscarResumoMedidas(pool, filtros = {}) {
   if (filtros.grupo2) {
     extraWhere += ' AND P.MEDIDAS_PENDENTES IS NOT NULL';
   }
+  extraWhere += ` ${condTipoSolicitacao(request, filtros.tipoSolicitacao)}`;
   if (regionalInClause) {
     extraWhere += ` AND COALESCE(R.REGIONAL_REGULATORIA, L.COD_SP) IN (${regionalInClause})`;
   }
@@ -59,6 +61,7 @@ async function buscarResumoMedidas(pool, filtros = {}) {
       FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
         ON M.NUM_NOTA = N.NUM_NOTA
+    ${JOIN_TIPO_SOLICITACAO}
     LEFT JOIN TBL_LOCAIS L
         ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
     ${APPLY_REGULATORIO}

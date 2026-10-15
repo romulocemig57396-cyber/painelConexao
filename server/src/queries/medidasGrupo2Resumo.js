@@ -2,6 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
 const { SITUACAO_MEDIDA_GRUPO2 } = require('./regulatorio');
+const { JOIN_TIPO_SOLICITACAO, condTipoSolicitacao } = require('./tipoSolicitacao');
 
 /**
  * Mesmo padrão de buscarResumoMedidas, mas agregando as medidas do GRUPO 2
@@ -41,6 +42,7 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
     request.input('filtroStatus', sql.NVarChar, filtros.status);
     extraWhere += ' AND M.COD_STAT_USU = @filtroStatus';
   }
+  extraWhere += ` ${condTipoSolicitacao(request, filtros.tipoSolicitacao)}`;
   if (regionalInClause) {
     extraWhere += ` AND L.COD_SP IN (${regionalInClause})`;
   }
@@ -53,6 +55,7 @@ async function buscarResumoGrupo2(pool, filtros = {}) {
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N
         ON M.NUM_NOTA = N.NUM_NOTA
+    ${JOIN_TIPO_SOLICITACAO}
     LEFT JOIN TBL_LOCAIS L
         ON L.COD_LOCAL_ANTIGO = CONCAT('8', REPLACE(N.COD_LOCAL, 'EX-', ''))
     WHERE
