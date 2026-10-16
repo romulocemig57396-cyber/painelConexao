@@ -54,7 +54,6 @@ export default function App() {
   const [resumo, setResumo] = useState([]);
   const [resumoGrupo2, setResumoGrupo2] = useState([]);
   const [resumo0070Regional, setResumo0070Regional] = useState([]);
-  const [valorObra, setValorObra] = useState({ notas: 0, valorObra: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [servicos, setServicos] = useState([]);
@@ -65,8 +64,6 @@ export default function App() {
   const [classesSelecionadas, setClassesSelecionadas] = useState([]);
   const [faixasCaixas, setFaixasCaixas] = useState([]);
   const [faixasCaixasSelecionadas, setFaixasCaixasSelecionadas] = useState([]);
-  const [universalizacoes, setUniversalizacoes] = useState([]);
-  const [universalizacoesSelecionadas, setUniversalizacoesSelecionadas] = useState([]);
   const [regionais, setRegionais] = useState([]);
   const [regionaisSelecionadas, setRegionaisSelecionadas] = useState([]);
   const [historicoRegionaisSelecionadas, setHistoricoRegionaisSelecionadas] = useState([]);
@@ -152,7 +149,6 @@ export default function App() {
     setTiposSolicitacaoSelecionados(tiposSolicitacao);
     setClassesSelecionadas(classes);
     setFaixasCaixasSelecionadas(faixasCaixas);
-    setUniversalizacoesSelecionadas(universalizacoes);
     setMedidasSelecionadas(medidasGrupo1);
     setSituacoesSelecionadas(SITUACOES_VENCIMENTO);
     setCardFiltroAtivo(null);
@@ -212,9 +208,6 @@ export default function App() {
       if (faixasCaixasSelecionadas.length !== faixasCaixas.length) {
         params.set('faixaCaixas', faixasCaixasSelecionadas.join(','));
       }
-      if (universalizacoesSelecionadas.length !== universalizacoes.length) {
-        params.set('universalizacao', universalizacoesSelecionadas.join(','));
-      }
       // Só manda "medidas" quando o usuário desmarcou alguma opção — com tudo
       // marcado o comportamento é o mesmo de não filtrar (usa o grupo 1 padrão do backend).
       if (medidasInicializado && medidasSelecionadas.length !== medidasGrupo1.length) {
@@ -247,34 +240,27 @@ export default function App() {
       if (faixasCaixasSelecionadas.length !== faixasCaixas.length) {
         paramsGrupo2.set('faixaCaixas', faixasCaixasSelecionadas.join(','));
       }
-      if (universalizacoesSelecionadas.length !== universalizacoes.length) {
-        paramsGrupo2.set('universalizacao', universalizacoesSelecionadas.join(','));
-      }
       const qsGrupo2 = paramsGrupo2.toString();
 
-      const [respMedidas, respResumo, respResumoGrupo2, respResumo0070, respValorObra] = await Promise.all([
+      const [respMedidas, respResumo, respResumoGrupo2, respResumo0070] = await Promise.all([
         fetch(`/api/medidas?${qs}`),
         fetch(`/api/medidas/resumo?${qs}`),
         fetch(`/api/medidas/resumo-grupo2?${qsGrupo2}`),
         fetch(`/api/medidas/resumo-0070-regional?${qsGrupo2}`),
-        fetch(`/api/medidas/valor-obra?${qs}`),
       ]);
       if (!respMedidas.ok) throw new Error(`Falha na API (${respMedidas.status})`);
       if (!respResumo.ok) throw new Error(`Falha na API do resumo (${respResumo.status})`);
       if (!respResumoGrupo2.ok) throw new Error(`Falha na API do resumo grupo 2 (${respResumoGrupo2.status})`);
       if (!respResumo0070.ok) throw new Error(`Falha na API da medida 0070 (${respResumo0070.status})`);
-      if (!respValorObra.ok) throw new Error(`Falha na API do valor da obra (${respValorObra.status})`);
 
       const json = await respMedidas.json();
       const jsonResumo = await respResumo.json();
       const jsonResumoGrupo2 = await respResumoGrupo2.json();
       const jsonResumo0070 = await respResumo0070.json();
-      const jsonValorObra = await respValorObra.json();
       setRows(json.data);
       setResumo(jsonResumo.data);
       setResumoGrupo2(jsonResumoGrupo2.data);
       setResumo0070Regional(jsonResumo0070.data);
-      setValorObra(jsonValorObra.data);
 
       if (json.regrasNegocio?.grupo1Medidas?.length) {
         setMedidasGrupo1(json.regrasNegocio.grupo1Medidas);
@@ -298,10 +284,6 @@ export default function App() {
         setFaixasCaixas(json.regrasNegocio.faixasCaixasDisponiveis);
         setFaixasCaixasSelecionadas(json.regrasNegocio.faixasCaixasDisponiveis);
       }
-      if (json.regrasNegocio?.universalizacaoDisponiveis?.length && !universalizacoes.length) {
-        setUniversalizacoes(json.regrasNegocio.universalizacaoDisponiveis);
-        setUniversalizacoesSelecionadas(json.regrasNegocio.universalizacaoDisponiveis);
-      }
       if (json.regrasNegocio?.codServicoFiltro?.length) {
         const servicosDisponiveis = json.regrasNegocio.codServicoFiltro;
         const servicosIniciais = servicosDisponiveis.filter((servico) => !['PSAA', 'PSAI'].includes(servico));
@@ -322,7 +304,7 @@ export default function App() {
   useEffect(() => {
     carregarDados();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [medidasSelecionadas, servicosSelecionados, regionaisSelecionadas, tiposSolicitacaoSelecionados, classesSelecionadas, faixasCaixasSelecionadas, universalizacoesSelecionadas, situacoesSelecionadas, cardFiltroAtivo]);
+  }, [medidasSelecionadas, servicosSelecionados, regionaisSelecionadas, tiposSolicitacaoSelecionados, classesSelecionadas, faixasCaixasSelecionadas, situacoesSelecionadas, cardFiltroAtivo]);
 
   useEffect(() => {
     async function carregarOpcoes() {
@@ -568,10 +550,6 @@ export default function App() {
       faixasCaixas={faixasCaixas}
       faixasCaixasSelecionadas={faixasCaixasSelecionadas}
       onFaixasCaixasChange={setFaixasCaixasSelecionadas}
-      universalizacoes={universalizacoes}
-      universalizacoesSelecionadas={universalizacoesSelecionadas}
-      onUniversalizacoesChange={setUniversalizacoesSelecionadas}
-      rotulosUniversalizacao={ROTULOS_UNIVERSALIZACAO}
       medidasGrupo1={medidasGrupo1}
       medidasSelecionadas={medidasSelecionadas}
       onMedidasChange={setMedidasSelecionadas}
@@ -710,7 +688,6 @@ export default function App() {
             {renderFiltrosMedidas()}
             {error && <div className="error-banner">Erro ao carregar dados: {error}</div>}
             {renderCardsMedidas()}
-            <ValorObraCard valorObra={valorObra} loading={loading} />
             <MedidasBarChart
               titulo="Medidas pendentes por situação de vencimento"
               resumo={resumo}

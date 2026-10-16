@@ -39,7 +39,6 @@ const config = {
     tiposSolicitacaoDisponiveis: parseList(process.env.TIPOS_SOLICITACAO_DISPONIVEIS, TIPOS_SOLICITACAO_PADRAO),
     classesDisponiveis: CLASSES_PADRAO,
     faixasCaixasDisponiveis: FAIXAS_CAIXAS_PADRAO,
-    universalizacaoDisponiveis: UNIVERSALIZACAO_PADRAO,
     grupo1Medidas: parseList(process.env.GRUPO1_MEDIDAS, ['0019', '0020', '0021', '0032', '0080', '0086']),
     grupo2Medidas: parseList(process.env.GRUPO2_MEDIDAS, ['0070', '0805', '0804', '0700', '0720']),
     statusPendente: parseList(process.env.STATUS_PENDENTE, ['ABER', 'ANDM']),

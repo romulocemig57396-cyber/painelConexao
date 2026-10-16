@@ -3,7 +3,7 @@ const { getPool } = require('../src/db');
 const { buscarHistoricoAprovacaoGranular, buscarValorObraAprovacaoGranular } = require('../src/queries/historicoAprovacao');
 const { buscarHistoricoLiberacaoGranular, buscarValorObraLiberacaoGranular } = require('../src/queries/historicoLiberacao');
 const { buscarHistoricoUniversalizacaoGranular, buscarValorObraUniversalizacaoGranular } = require('../src/queries/historicoUniversalizacao');
-const { buscarResumoMedidasPublico, buscarValorObraPublico } = require('../src/queries/medidasPublicoResumo');
+const { buscarResumoMedidasPublico } = require('../src/queries/medidasPublicoResumo');
 const { buscarInconsistencias } = require('../src/queries/inconsistencias');
 const { buscarOrcamentosEmitiveis } = require('../src/queries/orcamentosEmitiveis');
 const { buscarResumoMedida0070RegionalGranular } = require('../src/queries/medida0070RegionalResumo');
@@ -38,9 +38,8 @@ async function main() {
     ]);
 
     console.log('Consultando medidas agregadas, medida 0070 por regional, inconsistências e orçamentos emitíveis...');
-    const [medidas, valorObra, medida0070Regional, inconsistencias, orcamentosEmitiveis] = await Promise.all([
+    const [medidas, medida0070Regional, inconsistencias, orcamentosEmitiveis] = await Promise.all([
       buscarResumoMedidasPublico(pool),
-      buscarValorObraPublico(pool),
       buscarResumoMedida0070RegionalGranular(pool),
       buscarInconsistencias(pool),
       buscarOrcamentosEmitiveis(pool),
@@ -96,13 +95,12 @@ async function main() {
       tipoSolicitacao: r.TIPO_SOLICITACAO,
       classe: r.CLASSE,
       faixaCaixas: r.FAIXA_CAIXAS,
-      universalizacao: r.UNIVERSALIZACAO,
       codMedida: r.COD_MEDIDA,
       situacao: r.DES_SITUACAO,
       quantidade: r.QUANTIDADE,
     }));
 
-    // Mesmo formato pros 4 gráficos: "medidas" (Medidas Pendentes) + 3 do histórico.
+    // Valor da obra só nos 3 gráficos do Histórico (a aba Medidas Pendentes não tem esse card).
     const linhaValorObra = (grafico) => (r) => ({
       grafico,
       servico: r.SERVICO,
@@ -116,7 +114,6 @@ async function main() {
       valorObra: r.VALOR_OBRA ?? 0,
     });
     const valorObraPayload = [
-      ...valorObra.map(linhaValorObra('medidas')),
       ...valorObraAprovacao.map(linhaValorObra('aprovacao')),
       ...valorObraLiberacao.map(linhaValorObra('liberacao')),
       ...valorObraUniversalizacao.map(linhaValorObra('universalizacao')),
@@ -128,7 +125,6 @@ async function main() {
       tipoSolicitacao: r.TIPO_SOLICITACAO,
       classe: r.CLASSE,
       faixaCaixas: r.FAIXA_CAIXAS,
-      universalizacao: r.UNIVERSALIZACAO,
       situacao: r.DES_SITUACAO,
       quantidade: r.QUANTIDADE,
     }));

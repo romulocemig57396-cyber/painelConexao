@@ -44,7 +44,7 @@ const { universalizacaoCase, condFiltrosSolicitacao } = require('../src/queries/
 const medidasRouter = require('../src/routes/medidas');
 const historicoRouter = require('../src/routes/historico');
 
-const CATEGORIAS = config.regrasNegocio.universalizacaoDisponiveis;
+const CATEGORIAS = config.regrasHistorico.universalizacaoDisponiveis;
 const normalizar = (texto) => texto.replace(/\s+/g, ' ').trim();
 
 async function iniciarApi() {
@@ -60,7 +60,8 @@ async function iniciarApi() {
 async function chamar(base, caminho) {
   consultas.length = 0;
   const resp = await fetch(`${base}${caminho}`);
-  return { status: resp.status, corpo: await resp.json(), consultas: [...consultas] };
+  const corpo = await resp.json().catch(() => null);
+  return { status: resp.status, corpo, consultas: [...consultas] };
 }
 
 const temParametroUn = (consulta) => Object.keys(consulta.params).some((nome) => nome.startsWith('un_'));
@@ -73,7 +74,8 @@ test('as 5 categorias são as mesmas do gráfico "Universalização de obras"', 
     'SEGURANCA',
     'OUTROS',
   ]);
-  assert.deepEqual(config.regrasHistorico.universalizacaoDisponiveis, CATEGORIAS);
+  // Só o Histórico expõe a universalização (a aba Medidas Pendentes não tem esse filtro).
+  assert.equal(config.regrasNegocio.universalizacaoDisponiveis, undefined);
 });
 
 test('universalizacaoCase é idempotente por request (parâmetros registrados uma vez)', () => {
@@ -168,34 +170,23 @@ test('Histórico: ausente = sem filtro; valor válido filtra; inválido = 400; l
   }
 });
 
-test('Medidas: ausente = sem filtro; valor filtra; lista vazia = resposta vazia sem consultar o banco', async () => {
+test('Medidas Pendentes não usa universalização nem valor da obra (só o Histórico)', async () => {
   const api = await iniciarApi();
   try {
     const rotas = ['/api/medidas', '/api/medidas/resumo', '/api/medidas/resumo-grupo2', '/api/medidas/resumo-0070-regional'];
     for (const rota of rotas) {
-      let r = await chamar(api.base, rota);
+      // Mesmo que alguém envie ?universalizacao=..., a aba ignora: nenhum parâmetro un_ e nenhuma condição no SQL.
+      const r = await chamar(api.base, `${rota}?universalizacao=SEGURANCA`);
       assert.equal(r.status, 200, rota);
       assert.equal(r.consultas.length, 1, rota);
-      assert.ok(!temParametroUn(r.consultas[0]), `${rota}: sem parâmetro, sem filtro`);
-
-      r = await chamar(api.base, `${rota}?universalizacao=SEGURANCA`);
-      assert.equal(r.status, 200, rota);
-      assert.equal(r.consultas.length, 1, rota);
-      assert.equal(r.consultas[0].params.un_0, 'SEGURANCA', rota);
-
-      r = await chamar(api.base, `${rota}?universalizacao=`);
-      assert.equal(r.status, 200, rota);
-      assert.deepEqual(r.corpo.data, [], rota);
-      assert.equal(r.consultas.length, 0, `${rota}: lista vazia não pode consultar o banco`);
+      assert.ok(!temParametroUn(r.consultas[0]), `${rota}: não filtra por universalização`);
+      assert.ok(!r.consultas[0].sql.includes('COD_UNIVERSALIZACAO'), `${rota}: SQL sem universalização`);
+      assert.ok(!r.consultas[0].sql.includes('TBL_OBRA_CUSTOS'), `${rota}: SQL sem valor da obra`);
     }
-
-    let r = await chamar(api.base, '/api/medidas/valor-obra?universalizacao=');
-    assert.deepEqual(r.corpo.data, { notas: 0, valorObra: 0 });
-    assert.equal(r.consultas.length, 0);
-
-    r = await chamar(api.base, '/api/medidas/valor-obra?universalizacao=FORA_UNIVERSALIZACAO');
-    assert.equal(r.consultas.length, 1);
-    assert.equal(r.consultas[0].params.un_0, 'FORA_UNIVERSALIZACAO');
+    // A rota do card de valor da obra da aba não existe mais.
+    const r = await chamar(api.base, '/api/medidas/valor-obra');
+    assert.equal(r.consultas.length, 0, 'valor-obra de Medidas não pode consultar o banco');
+    assert.notEqual(r.status, 200);
   } finally {
     await api.fechar();
   }

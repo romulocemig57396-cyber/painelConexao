@@ -89,7 +89,7 @@ ODBC local).
 ## 5. Filtros do painel
 
 Nas abas **Medidas Pendentes** e **Histórico**, os gráficos e cards respondem a
-estes filtros, enviados à API só quando a seleção é parcial (tudo marcado = sem
+estes filtros (exceto **Universalização**, que existe só no Histórico), enviados à API só quando a seleção é parcial (tudo marcado = sem
 parâmetro). Clique isola uma opção; Ctrl/Cmd+clique combina.
 
 | Filtro | Parâmetro | Origem (SQL Server) | Opções |
@@ -115,11 +115,11 @@ divergem. Os códigos de cada categoria vêm de `regrasHistorico.universalizacao
 (`HIST_UNIVERSALIZADA_CODIGOS`, `HIST_NAO_UNIVERSALIZADA_CODIGOS`,
 `HIST_FORA_UNIVERSALIZACAO_CODIGOS`, `HIST_SEGURANCA_CODIGOS`); qualquer outro
 código, nulo ou vazio cai em `OUTROS`. Como é atributo da nota, o filtro vale
-para todos os gráficos e cards da aba; no Histórico ele também filtra o próprio
-gráfico de universalização.
+para todos os gráficos e cards do Histórico, inclusive o próprio gráfico de
+universalização. Ele **não existe** na aba Medidas Pendentes (nem o card "Valor da
+obra", que fica só nos gráficos do Histórico).
 
-No **painel externo** (Portal), o mesmo filtro existe nas abas Histórico e Medidas
-Pendentes: a exportação (`exportarPainelExterno.js`) envia a categoria em cada
+No **painel externo** (Portal), o mesmo filtro existe só na aba Histórico: a exportação (`exportarPainelExterno.js`) envia a categoria em cada
 linha e o filtro roda no navegador. Depois de atualizar o código, rode
 "Atualizar painel externo" — enquanto isso não acontece, as linhas antigas do
 Portal aparecem todas como "Outros".
