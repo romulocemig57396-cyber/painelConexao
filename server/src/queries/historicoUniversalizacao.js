@@ -2,14 +2,15 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams, campoNaoContemPalavra, campoIgual, medidaCasePorServico } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO } = require('./mapeamentoMedidaServico');
-const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
+const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO, universalizacaoCase, condFiltrosSolicitacao } = require('./tipoSolicitacao');
 const { DIMENSOES_FILTROS, consultaValorObra, totalValorObra } = require('./valorObra');
 
 /**
  * Histórico mensal de universalização de obras: notas com a medida "com
- * obras" não cancelada, categorizadas pelo COD_UNIVERSALIZACAO da nota em 3
- * grupos (universalizadaCodigos, naoUniversalizadaCodigos, e OUTROS pra
- * qualquer outro código ou nulo/vazio).
+ * obras" não cancelada, categorizadas pelo COD_UNIVERSALIZACAO da nota nas 5
+ * categorias de universalizacaoCase() (tipoSolicitacao.js) — a mesma expressão
+ * do filtro "Universalização", pra gráfico e filtro nunca divergirem. Qualquer
+ * código fora das listas configuradas (ou nulo/vazio) cai em OUTROS.
  *
  * "Com obras" varia por serviço (0590 pra maioria, 0591 pra PSAA/PSAI — ver
  * mapeamentoMedidaServico.js), resolvido por LINHA via medidaCasePorServico,
@@ -18,8 +19,7 @@ const { DIMENSOES_FILTROS, consultaValorObra, totalValorObra } = require('./valo
  * filtros.servico/filtros.mercado: ver comentário em historicoAprovacao.js.
  */
 async function buscarHistoricoUniversalizacao(pool, filtros = {}, { valorObra = false } = {}) {
-  const { statusCancelado, codServicoFiltro, dataMinima, universalizacao } = config.regrasHistorico;
-  const { universalizadaCodigos, naoUniversalizadaCodigos, foraUniversalizacaoCodigos, segurancaCodigos } = universalizacao;
+  const { statusCancelado, codServicoFiltro, dataMinima } = config.regrasHistorico;
   const servicos = filtros.servico?.length ? filtros.servico : codServicoFiltro;
   const regionais = filtros.regional?.length ? filtros.regional : null;
 
@@ -28,10 +28,7 @@ async function buscarHistoricoUniversalizacao(pool, filtros = {}, { valorObra = 
   const medComObrasCase = medidaCasePorServico(
     'N.COD_SERVICO', request, 'comObras', 'comObras', MAPEAMENTO_MEDIDA_POR_SERVICO,
   );
-  const universalizadaInClause = inClauseParams(request, 'univ_', universalizadaCodigos);
-  const naoUniversalizadaInClause = inClauseParams(request, 'naoUniv_', naoUniversalizadaCodigos);
-  const foraUniversalizacaoInClause = inClauseParams(request, 'foraUniv_', foraUniversalizacaoCodigos);
-  const segurancaInClause = inClauseParams(request, 'seg_', segurancaCodigos);
+  const categoriaUniversalizacao = universalizacaoCase(request);
   const servicoInClause = inClauseParams(request, 'sv_', servicos);
   const regionalInClause = regionais ? inClauseParams(request, 'rg_', regionais) : null;
   const condNaoCancelado = campoNaoContemPalavra('M.COD_STAT_USU', request, 'stCanc', statusCancelado);
@@ -45,13 +42,7 @@ async function buscarHistoricoUniversalizacao(pool, filtros = {}, { valorObra = 
         SELECT
             N.NUM_NOTA,
             FORMAT(M.DAT_TREAL, 'yyyy-MM') AS MES,
-            CASE
-                WHEN N.COD_UNIVERSALIZACAO IN (${universalizadaInClause}) THEN 'UNIVERSALIZADA'
-                WHEN N.COD_UNIVERSALIZACAO IN (${naoUniversalizadaInClause}) THEN 'NAO_UNIVERSALIZADA'
-                WHEN N.COD_UNIVERSALIZACAO IN (${foraUniversalizacaoInClause}) THEN 'FORA_UNIVERSALIZACAO'
-                WHEN N.COD_UNIVERSALIZACAO IN (${segurancaInClause}) THEN 'SEGURANCA'
-                ELSE 'OUTROS'
-            END AS CATEGORIA
+            ${categoriaUniversalizacao} AS CATEGORIA
         FROM TBL_MEDIDAS M
         INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
         ${JOIN_TIPO_SOLICITACAO}
@@ -85,18 +76,14 @@ async function buscarHistoricoUniversalizacao(pool, filtros = {}, { valorObra = 
  * de só somar dentro do recorte pedido.
  */
 async function buscarHistoricoUniversalizacaoGranular(pool, { valorObra = false } = {}) {
-  const { statusCancelado, servicosDisponiveis, dataMinima, universalizacao } = config.regrasHistorico;
-  const { universalizadaCodigos, naoUniversalizadaCodigos, foraUniversalizacaoCodigos, segurancaCodigos } = universalizacao;
+  const { statusCancelado, servicosDisponiveis, dataMinima } = config.regrasHistorico;
 
   const request = pool.request();
   request.input('dataMinima', sql.Date, new Date(dataMinima));
   const medComObrasCase = medidaCasePorServico(
     'N.COD_SERVICO', request, 'comObras', 'comObras', MAPEAMENTO_MEDIDA_POR_SERVICO,
   );
-  const universalizadaInClause = inClauseParams(request, 'univ_', universalizadaCodigos);
-  const naoUniversalizadaInClause = inClauseParams(request, 'naoUniv_', naoUniversalizadaCodigos);
-  const foraUniversalizacaoInClause = inClauseParams(request, 'foraUniv_', foraUniversalizacaoCodigos);
-  const segurancaInClause = inClauseParams(request, 'seg_', segurancaCodigos);
+  const categoriaUniversalizacao = universalizacaoCase(request);
   const servicoInClause = inClauseParams(request, 'sv_', servicosDisponiveis);
   const condNaoCancelado = campoNaoContemPalavra('M.COD_STAT_USU', request, 'stCanc', statusCancelado);
 
@@ -108,13 +95,7 @@ async function buscarHistoricoUniversalizacaoGranular(pool, { valorObra = false 
             N.DES_MERCADO AS MERCADO,
             L.COD_SP AS REGIONAL,
             ${COLUNAS_SOLICITACAO},
-            CASE
-                WHEN N.COD_UNIVERSALIZACAO IN (${universalizadaInClause}) THEN 'UNIVERSALIZADA'
-                WHEN N.COD_UNIVERSALIZACAO IN (${naoUniversalizadaInClause}) THEN 'NAO_UNIVERSALIZADA'
-                WHEN N.COD_UNIVERSALIZACAO IN (${foraUniversalizacaoInClause}) THEN 'FORA_UNIVERSALIZACAO'
-                WHEN N.COD_UNIVERSALIZACAO IN (${segurancaInClause}) THEN 'SEGURANCA'
-                ELSE 'OUTROS'
-            END AS CATEGORIA
+            ${categoriaUniversalizacao} AS CATEGORIA
         FROM TBL_MEDIDAS M
         INNER JOIN TBL_NOTAS N ON N.NUM_NOTA = M.NUM_NOTA
         ${JOIN_TIPO_SOLICITACAO}

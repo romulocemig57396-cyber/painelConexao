@@ -16,6 +16,10 @@ export default function Filters({
   faixasCaixas,
   faixasCaixasSelecionadas,
   onFaixasCaixasChange,
+  universalizacoes,
+  universalizacoesSelecionadas,
+  onUniversalizacoesChange,
+  rotulosUniversalizacao,
   medidasGrupo1,
   medidasSelecionadas,
   onMedidasChange,
@@ -31,6 +35,7 @@ export default function Filters({
     tiposSolicitacaoSelecionados.length !== tiposSolicitacao.length ||
     classesSelecionadas.length !== classes.length ||
     faixasCaixasSelecionadas.length !== faixasCaixas.length ||
+    universalizacoesSelecionadas.length !== universalizacoes.length ||
     medidasSelecionadas.length !== medidasGrupo1.length ||
     situacoesSelecionadas.length !== situacoesVencimento.length ||
     cardFiltroAtivo;
@@ -70,6 +75,14 @@ export default function Filters({
         opcoes={faixasCaixas}
         selecionadas={faixasCaixasSelecionadas}
         onChange={onFaixasCaixasChange}
+        wrapperClassName="filters-bar__field"
+      />
+      <ChipMultiFilter
+        label="Universalização"
+        opcoes={universalizacoes}
+        selecionadas={universalizacoesSelecionadas}
+        onChange={onUniversalizacoesChange}
+        rotulos={rotulosUniversalizacao}
         wrapperClassName="filters-bar__field"
       />
       <ChipMultiFilter

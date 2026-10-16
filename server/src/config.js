@@ -18,6 +18,12 @@ const TIPOS_SOLICITACAO_PADRAO = ['LN', 'AC', 'SA', 'OIP', 'LP', 'GD', 'TR', 'ML
 const CLASSES_PADRAO = ['RESIDENCIAL', 'COMERCIAL', 'INDUSTRIAL', 'OUTRAS'];
 const FAIXAS_CAIXAS_PADRAO = ['1', '2', '3', '4 OU MAIS', 'SEM INFORMAÇÃO'];
 
+// Categorias de universalização (N.COD_UNIVERSALIZACAO), as mesmas do gráfico
+// "Universalização de obras" do Histórico — ver universalizacaoCase() em
+// queries/tipoSolicitacao.js. Os códigos de cada categoria vêm de
+// regrasHistorico.universalizacao; o que não casar com nenhum cai em OUTROS.
+const UNIVERSALIZACAO_PADRAO = ['UNIVERSALIZADA', 'NAO_UNIVERSALIZADA', 'FORA_UNIVERSALIZACAO', 'SEGURANCA', 'OUTROS'];
+
 const config = {
   db: {
     server: process.env.DB_SERVER,
@@ -33,6 +39,7 @@ const config = {
     tiposSolicitacaoDisponiveis: parseList(process.env.TIPOS_SOLICITACAO_DISPONIVEIS, TIPOS_SOLICITACAO_PADRAO),
     classesDisponiveis: CLASSES_PADRAO,
     faixasCaixasDisponiveis: FAIXAS_CAIXAS_PADRAO,
+    universalizacaoDisponiveis: UNIVERSALIZACAO_PADRAO,
     grupo1Medidas: parseList(process.env.GRUPO1_MEDIDAS, ['0019', '0020', '0021', '0032', '0080', '0086']),
     grupo2Medidas: parseList(process.env.GRUPO2_MEDIDAS, ['0070', '0805', '0804', '0700', '0720']),
     statusPendente: parseList(process.env.STATUS_PENDENTE, ['ABER', 'ANDM']),
@@ -53,6 +60,7 @@ const config = {
     tiposSolicitacaoDisponiveis: parseList(process.env.TIPOS_SOLICITACAO_DISPONIVEIS, TIPOS_SOLICITACAO_PADRAO),
     classesDisponiveis: CLASSES_PADRAO,
     faixasCaixasDisponiveis: FAIXAS_CAIXAS_PADRAO,
+    universalizacaoDisponiveis: UNIVERSALIZACAO_PADRAO,
     regionaisDisponiveis: parseList(process.env.HIST_REGIONAIS_DISPONIVEIS, ['CE', 'LE', 'MQ', 'NE', 'OE', 'SL', 'TR']),
     dataMinima: process.env.HIST_DATA_MINIMA || '2025-01-01',
     // Gráfico 1 (aprovação): medida verificada e os 3 status mutuamente exclusivos

@@ -1,4 +1,5 @@
-export default function ChipMultiFilter({ label, opcoes, selecionadas, onChange, wrapperClassName }) {
+// `rotulos` (opcional): mapa valor -> texto exibido no chip; o valor segue sendo o que vai pra API.
+export default function ChipMultiFilter({ label, opcoes, selecionadas, onChange, wrapperClassName, rotulos }) {
   if (!opcoes.length) return null;
 
   const todasSelecionadas = selecionadas.length === opcoes.length;
@@ -33,7 +34,7 @@ export default function ChipMultiFilter({ label, opcoes, selecionadas, onChange,
             className={`chip ${selecionadas.includes(valor) ? 'chip--ativo' : ''}`}
             onClick={(event) => handleClickOpcao(valor, event)}
           >
-            {valor}
+            {rotulos?.[valor] ?? valor}
           </button>
         ))}
       </div>

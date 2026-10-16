@@ -37,6 +37,9 @@ const CATEGORIAS_LIBERACAO = [
 
 const CATEGORIAS_UNIVERSALIZACAO = [{ key: 'UNIVERSALIZADA', label: 'Universalizada', color: '#2f9e6e' },{ key: 'NAO_UNIVERSALIZADA', label: 'Não universalizada', color: '#8a5a0b' },{ key: 'FORA_UNIVERSALIZACAO', label: 'Fora da universalização', color: '#2a78d6' },{ key: 'SEGURANCA', label: 'Obras de segurança', color: '#a02b2b' },{ key: 'OUTROS', label: 'Outros', color: '#898781' },];
 
+// Rótulo de cada categoria (mesma fonte do gráfico, pra gráfico e filtro nunca divergirem).
+const ROTULOS_UNIVERSALIZACAO = Object.fromEntries(CATEGORIAS_UNIVERSALIZACAO.map((c) => [c.key, c.label]));
+
 const SITUACOES_VENCIMENTO = [
   'PENDENTES',
   'EM ATRASO',
@@ -62,6 +65,8 @@ export default function App() {
   const [classesSelecionadas, setClassesSelecionadas] = useState([]);
   const [faixasCaixas, setFaixasCaixas] = useState([]);
   const [faixasCaixasSelecionadas, setFaixasCaixasSelecionadas] = useState([]);
+  const [universalizacoes, setUniversalizacoes] = useState([]);
+  const [universalizacoesSelecionadas, setUniversalizacoesSelecionadas] = useState([]);
   const [regionais, setRegionais] = useState([]);
   const [regionaisSelecionadas, setRegionaisSelecionadas] = useState([]);
   const [historicoRegionaisSelecionadas, setHistoricoRegionaisSelecionadas] = useState([]);
@@ -105,6 +110,8 @@ export default function App() {
   const [historicoClassesSelecionadas, setHistoricoClassesSelecionadas] = useState([]);
   const [historicoFaixasDisponiveis, setHistoricoFaixasDisponiveis] = useState([]);
   const [historicoFaixasSelecionadas, setHistoricoFaixasSelecionadas] = useState([]);
+  const [historicoUniversalizacoesDisponiveis, setHistoricoUniversalizacoesDisponiveis] = useState([]);
+  const [historicoUniversalizacoesSelecionadas, setHistoricoUniversalizacoesSelecionadas] = useState([]);
   // ChipMultiFilter trabalha com array de selecionadas. Serviço começa só com
   // COMT (preserva o comportamento/carga de antes); "Todos" soma os
   // códigos disponíveis (servico vira lista pro backend, sem default implícito).
@@ -145,6 +152,7 @@ export default function App() {
     setTiposSolicitacaoSelecionados(tiposSolicitacao);
     setClassesSelecionadas(classes);
     setFaixasCaixasSelecionadas(faixasCaixas);
+    setUniversalizacoesSelecionadas(universalizacoes);
     setMedidasSelecionadas(medidasGrupo1);
     setSituacoesSelecionadas(SITUACOES_VENCIMENTO);
     setCardFiltroAtivo(null);
@@ -204,6 +212,9 @@ export default function App() {
       if (faixasCaixasSelecionadas.length !== faixasCaixas.length) {
         params.set('faixaCaixas', faixasCaixasSelecionadas.join(','));
       }
+      if (universalizacoesSelecionadas.length !== universalizacoes.length) {
+        params.set('universalizacao', universalizacoesSelecionadas.join(','));
+      }
       // Só manda "medidas" quando o usuário desmarcou alguma opção — com tudo
       // marcado o comportamento é o mesmo de não filtrar (usa o grupo 1 padrão do backend).
       if (medidasInicializado && medidasSelecionadas.length !== medidasGrupo1.length) {
@@ -235,6 +246,9 @@ export default function App() {
       }
       if (faixasCaixasSelecionadas.length !== faixasCaixas.length) {
         paramsGrupo2.set('faixaCaixas', faixasCaixasSelecionadas.join(','));
+      }
+      if (universalizacoesSelecionadas.length !== universalizacoes.length) {
+        paramsGrupo2.set('universalizacao', universalizacoesSelecionadas.join(','));
       }
       const qsGrupo2 = paramsGrupo2.toString();
 
@@ -284,6 +298,10 @@ export default function App() {
         setFaixasCaixas(json.regrasNegocio.faixasCaixasDisponiveis);
         setFaixasCaixasSelecionadas(json.regrasNegocio.faixasCaixasDisponiveis);
       }
+      if (json.regrasNegocio?.universalizacaoDisponiveis?.length && !universalizacoes.length) {
+        setUniversalizacoes(json.regrasNegocio.universalizacaoDisponiveis);
+        setUniversalizacoesSelecionadas(json.regrasNegocio.universalizacaoDisponiveis);
+      }
       if (json.regrasNegocio?.codServicoFiltro?.length) {
         const servicosDisponiveis = json.regrasNegocio.codServicoFiltro;
         const servicosIniciais = servicosDisponiveis.filter((servico) => !['PSAA', 'PSAI'].includes(servico));
@@ -304,7 +322,7 @@ export default function App() {
   useEffect(() => {
     carregarDados();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [medidasSelecionadas, servicosSelecionados, regionaisSelecionadas, tiposSolicitacaoSelecionados, classesSelecionadas, faixasCaixasSelecionadas, situacoesSelecionadas, cardFiltroAtivo]);
+  }, [medidasSelecionadas, servicosSelecionados, regionaisSelecionadas, tiposSolicitacaoSelecionados, classesSelecionadas, faixasCaixasSelecionadas, universalizacoesSelecionadas, situacoesSelecionadas, cardFiltroAtivo]);
 
   useEffect(() => {
     async function carregarOpcoes() {
@@ -372,6 +390,9 @@ export default function App() {
         if (historicoFaixasSelecionadas.length !== historicoFaixasDisponiveis.length) {
           params.set('faixaCaixas', historicoFaixasSelecionadas.join(','));
         }
+        if (historicoUniversalizacoesSelecionadas.length !== historicoUniversalizacoesDisponiveis.length) {
+          params.set('universalizacao', historicoUniversalizacoesSelecionadas.join(','));
+        }
         const qs = params.toString();
         const [respAprovacao, respLiberacao, respUniversalizacao] = await Promise.all([
           fetch(`/api/historico/aprovacao?${qs}`),
@@ -409,6 +430,13 @@ export default function App() {
           setHistoricoFaixasDisponiveis(jsonAprovacao.regrasNegocio.faixasCaixasDisponiveis);
           setHistoricoFaixasSelecionadas(jsonAprovacao.regrasNegocio.faixasCaixasDisponiveis);
         }
+        if (
+          jsonAprovacao.regrasNegocio?.universalizacaoDisponiveis?.length &&
+          !historicoUniversalizacoesDisponiveis.length
+        ) {
+          setHistoricoUniversalizacoesDisponiveis(jsonAprovacao.regrasNegocio.universalizacaoDisponiveis);
+          setHistoricoUniversalizacoesSelecionadas(jsonAprovacao.regrasNegocio.universalizacaoDisponiveis);
+        }
         if (jsonAprovacao.regrasNegocio?.mercadosDisponiveis?.length) {
           const disponiveis = jsonAprovacao.regrasNegocio.mercadosDisponiveis;
           setHistoricoMercadosDisponiveis(disponiveis);
@@ -425,7 +453,7 @@ export default function App() {
     }
     carregarHistorico();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [historicoServico, historicoMercado, historicoRegionaisSelecionadas, historicoTiposSelecionados, historicoClassesSelecionadas, historicoFaixasSelecionadas]);
+  }, [historicoServico, historicoMercado, historicoRegionaisSelecionadas, historicoTiposSelecionados, historicoClassesSelecionadas, historicoFaixasSelecionadas, historicoUniversalizacoesSelecionadas]);
 
   useEffect(() => {
     async function carregarValorObraHistorico() {
@@ -443,6 +471,9 @@ export default function App() {
         }
         if (historicoFaixasSelecionadas.length !== historicoFaixasDisponiveis.length) {
           params.set('faixaCaixas', historicoFaixasSelecionadas.join(','));
+        }
+        if (historicoUniversalizacoesSelecionadas.length !== historicoUniversalizacoesDisponiveis.length) {
+          params.set('universalizacao', historicoUniversalizacoesSelecionadas.join(','));
         }
         const resp = await fetch(`/api/historico/valor-obra?${params.toString()}`);
         if (!resp.ok) throw new Error(`Falha na API do valor da obra (${resp.status})`);
@@ -464,6 +495,7 @@ export default function App() {
     historicoTiposSelecionados,
     historicoClassesSelecionadas,
     historicoFaixasSelecionadas,
+    historicoUniversalizacoesSelecionadas,
   ]);
 
   useEffect(() => {
@@ -536,6 +568,10 @@ export default function App() {
       faixasCaixas={faixasCaixas}
       faixasCaixasSelecionadas={faixasCaixasSelecionadas}
       onFaixasCaixasChange={setFaixasCaixasSelecionadas}
+      universalizacoes={universalizacoes}
+      universalizacoesSelecionadas={universalizacoesSelecionadas}
+      onUniversalizacoesChange={setUniversalizacoesSelecionadas}
+      rotulosUniversalizacao={ROTULOS_UNIVERSALIZACAO}
       medidasGrupo1={medidasGrupo1}
       medidasSelecionadas={medidasSelecionadas}
       onMedidasChange={setMedidasSelecionadas}
@@ -617,6 +653,14 @@ export default function App() {
                 opcoes={historicoFaixasDisponiveis}
                 selecionadas={historicoFaixasSelecionadas}
                 onChange={setHistoricoFaixasSelecionadas}
+                wrapperClassName="filters-bar__field"
+              />
+              <ChipMultiFilter
+                label="Universalização"
+                opcoes={historicoUniversalizacoesDisponiveis}
+                selecionadas={historicoUniversalizacoesSelecionadas}
+                onChange={setHistoricoUniversalizacoesSelecionadas}
+                rotulos={ROTULOS_UNIVERSALIZACAO}
                 wrapperClassName="filters-bar__field"
               />
             </section>

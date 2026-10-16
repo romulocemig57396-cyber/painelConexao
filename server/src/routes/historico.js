@@ -14,7 +14,7 @@ const router = express.Router();
 // múltiplos códigos no mesmo gráfico; mercado continua único (só 2 valores
 // possíveis, "ambos" já é só omitir o filtro).
 function lerFiltrosComuns(req) {
-  const { servico, mercado, regional, tipoSolicitacao, classe, faixaCaixas } = req.query;
+  const { servico, mercado, regional, tipoSolicitacao, classe, faixaCaixas, universalizacao } = req.query;
   return {
     servico: validarListaEnum(servico, config.regrasHistorico.servicosDisponiveis, 'servico'),
     mercado: validarEnum(mercado, config.regrasHistorico.mercadosDisponiveis, 'mercado'),
@@ -22,6 +22,11 @@ function lerFiltrosComuns(req) {
     tipoSolicitacao: validarListaEnum(tipoSolicitacao, config.regrasHistorico.tiposSolicitacaoDisponiveis, 'tipoSolicitacao'),
     classe: validarListaEnum(classe, config.regrasHistorico.classesDisponiveis, 'classe'),
     faixaCaixas: validarListaEnum(faixaCaixas, config.regrasHistorico.faixasCaixasDisponiveis, 'faixaCaixas'),
+    universalizacao: validarListaEnum(
+      universalizacao,
+      config.regrasHistorico.universalizacaoDisponiveis,
+      'universalizacao',
+    ),
   };
 }
 
@@ -37,7 +42,9 @@ function regionalVazia(filtros) {
 }
 
 function tipoSolicitacaoVazio(filtros) {
-  return [filtros.tipoSolicitacao, filtros.classe, filtros.faixaCaixas].some((lista) => lista !== undefined && lista.length === 0);
+  return [filtros.tipoSolicitacao, filtros.classe, filtros.faixaCaixas, filtros.universalizacao].some(
+    (lista) => lista !== undefined && lista.length === 0,
+  );
 }
 
 router.get('/historico/aprovacao', async (req, res) => {

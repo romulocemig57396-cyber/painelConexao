@@ -24,15 +24,17 @@ router.get('/medidas/opcoes', async (_req, res) => {
 
 router.get('/medidas/resumo-0070-regional', async (req, res) => {
   try {
-    const { servico, regional, tipoSolicitacao, classe, faixaCaixas } = req.query;
+    const { servico, regional, tipoSolicitacao, classe, faixaCaixas, universalizacao } = req.query;
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
     const tipoSolicitacaoFiltro = parseListaFiltro(tipoSolicitacao);
     const classeFiltro = parseListaFiltro(classe);
     const faixaCaixasFiltro = parseListaFiltro(faixaCaixas);
+    const universalizacaoFiltro = parseListaFiltro(universalizacao);
     if ((servicoFiltro && servicoFiltro.length === 0) || (regionalFiltro && regionalFiltro.length === 0)
       || (tipoSolicitacaoFiltro && tipoSolicitacaoFiltro.length === 0)
-      || (classeFiltro && classeFiltro.length === 0) || (faixaCaixasFiltro && faixaCaixasFiltro.length === 0)) {
+      || (classeFiltro && classeFiltro.length === 0) || (faixaCaixasFiltro && faixaCaixasFiltro.length === 0)
+      || (universalizacaoFiltro && universalizacaoFiltro.length === 0)) {
       return res.json({ data: [] });
     }
     const pool = await getPool();
@@ -42,6 +44,7 @@ router.get('/medidas/resumo-0070-regional', async (req, res) => {
       tipoSolicitacao: tipoSolicitacaoFiltro,
       classe: classeFiltro,
       faixaCaixas: faixaCaixasFiltro,
+      universalizacao: universalizacaoFiltro,
     });
     res.json({ data });
   } catch (err) {
@@ -52,7 +55,7 @@ router.get('/medidas/resumo-0070-regional', async (req, res) => {
 
 router.get('/medidas', async (req, res) => {
   try {
-    const { area, status, medidas, servico, regional, situacao, grupo2, tipoSolicitacao, classe, faixaCaixas } = req.query;
+    const { area, status, medidas, servico, regional, situacao, grupo2, tipoSolicitacao, classe, faixaCaixas, universalizacao } = req.query;
     const medidasFiltro = parseListaFiltro(medidas);
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
@@ -60,10 +63,12 @@ router.get('/medidas', async (req, res) => {
     const tipoSolicitacaoFiltro = parseListaFiltro(tipoSolicitacao);
     const classeFiltro = parseListaFiltro(classe);
     const faixaCaixasFiltro = parseListaFiltro(faixaCaixas);
+    const universalizacaoFiltro = parseListaFiltro(universalizacao);
     if ((medidasFiltro && medidasFiltro.length === 0) || (servicoFiltro && servicoFiltro.length === 0)
       || (regionalFiltro && regionalFiltro.length === 0) || (situacaoFiltro && situacaoFiltro.length === 0)
       || (tipoSolicitacaoFiltro && tipoSolicitacaoFiltro.length === 0)
-      || (classeFiltro && classeFiltro.length === 0) || (faixaCaixasFiltro && faixaCaixasFiltro.length === 0)) {
+      || (classeFiltro && classeFiltro.length === 0) || (faixaCaixasFiltro && faixaCaixasFiltro.length === 0)
+      || (universalizacaoFiltro && universalizacaoFiltro.length === 0)) {
       return res.json({ total: 0, regrasNegocio: config.regrasNegocio, data: [] });
     }
 
@@ -78,6 +83,7 @@ router.get('/medidas', async (req, res) => {
       tipoSolicitacao: tipoSolicitacaoFiltro,
       classe: classeFiltro,
       faixaCaixas: faixaCaixasFiltro,
+      universalizacao: universalizacaoFiltro,
       grupo2: grupo2 === 'SIM',
     });
 
@@ -101,7 +107,7 @@ router.get('/medidas', async (req, res) => {
 // mesmos filtros (area/status/medidas) de /medidas — usada pelo gráfico de barras.
 router.get('/medidas/resumo', async (req, res) => {
   try {
-    const { area, status, medidas, servico, regional, situacao, grupo2, tipoSolicitacao, classe, faixaCaixas } = req.query;
+    const { area, status, medidas, servico, regional, situacao, grupo2, tipoSolicitacao, classe, faixaCaixas, universalizacao } = req.query;
     const medidasFiltro = parseListaFiltro(medidas);
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
@@ -109,10 +115,12 @@ router.get('/medidas/resumo', async (req, res) => {
     const tipoSolicitacaoFiltro = parseListaFiltro(tipoSolicitacao);
     const classeFiltro = parseListaFiltro(classe);
     const faixaCaixasFiltro = parseListaFiltro(faixaCaixas);
+    const universalizacaoFiltro = parseListaFiltro(universalizacao);
     if ((medidasFiltro && medidasFiltro.length === 0) || (servicoFiltro && servicoFiltro.length === 0)
       || (regionalFiltro && regionalFiltro.length === 0) || (situacaoFiltro && situacaoFiltro.length === 0)
       || (tipoSolicitacaoFiltro && tipoSolicitacaoFiltro.length === 0)
-      || (classeFiltro && classeFiltro.length === 0) || (faixaCaixasFiltro && faixaCaixasFiltro.length === 0)) {
+      || (classeFiltro && classeFiltro.length === 0) || (faixaCaixasFiltro && faixaCaixasFiltro.length === 0)
+      || (universalizacaoFiltro && universalizacaoFiltro.length === 0)) {
       return res.json({ regrasNegocio: config.regrasNegocio, data: [] });
     }
 
@@ -127,6 +135,7 @@ router.get('/medidas/resumo', async (req, res) => {
       tipoSolicitacao: tipoSolicitacaoFiltro,
       classe: classeFiltro,
       faixaCaixas: faixaCaixasFiltro,
+      universalizacao: universalizacaoFiltro,
       grupo2: grupo2 === 'SIM',
     });
 
@@ -141,7 +150,7 @@ router.get('/medidas/resumo', async (req, res) => {
 // mesmos filtros de /medidas/resumo.
 router.get('/medidas/valor-obra', async (req, res) => {
   try {
-    const { area, status, medidas, servico, regional, situacao, grupo2, tipoSolicitacao, classe, faixaCaixas } = req.query;
+    const { area, status, medidas, servico, regional, situacao, grupo2, tipoSolicitacao, classe, faixaCaixas, universalizacao } = req.query;
     const medidasFiltro = parseListaFiltro(medidas);
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
@@ -149,7 +158,8 @@ router.get('/medidas/valor-obra', async (req, res) => {
     const tipoSolicitacaoFiltro = parseListaFiltro(tipoSolicitacao);
     const classeFiltro = parseListaFiltro(classe);
     const faixaCaixasFiltro = parseListaFiltro(faixaCaixas);
-    const algumVazio = [medidasFiltro, servicoFiltro, regionalFiltro, situacaoFiltro, tipoSolicitacaoFiltro, classeFiltro, faixaCaixasFiltro]
+    const universalizacaoFiltro = parseListaFiltro(universalizacao);
+    const algumVazio = [medidasFiltro, servicoFiltro, regionalFiltro, situacaoFiltro, tipoSolicitacaoFiltro, classeFiltro, faixaCaixasFiltro, universalizacaoFiltro]
       .some((lista) => lista && lista.length === 0);
     if (algumVazio) return res.json({ data: { notas: 0, valorObra: 0 } });
 
@@ -164,6 +174,7 @@ router.get('/medidas/valor-obra', async (req, res) => {
       tipoSolicitacao: tipoSolicitacaoFiltro,
       classe: classeFiltro,
       faixaCaixas: faixaCaixasFiltro,
+      universalizacao: universalizacaoFiltro,
       grupo2: grupo2 === 'SIM',
     });
     res.json({ data });
@@ -177,15 +188,17 @@ router.get('/medidas/valor-obra', async (req, res) => {
 // pelo segundo gráfico da aba "Gráficos" ("Medidas pendentes — Áreas envolvidas").
 router.get('/medidas/resumo-grupo2', async (req, res) => {
   try {
-    const { area, status, servico, regional, tipoSolicitacao, classe, faixaCaixas } = req.query;
+    const { area, status, servico, regional, tipoSolicitacao, classe, faixaCaixas, universalizacao } = req.query;
     const servicoFiltro = parseListaFiltro(servico);
     const regionalFiltro = parseListaFiltro(regional);
     const tipoSolicitacaoFiltro = parseListaFiltro(tipoSolicitacao);
     const classeFiltro = parseListaFiltro(classe);
     const faixaCaixasFiltro = parseListaFiltro(faixaCaixas);
+    const universalizacaoFiltro = parseListaFiltro(universalizacao);
     if ((servicoFiltro && servicoFiltro.length === 0) || (regionalFiltro && regionalFiltro.length === 0)
       || (tipoSolicitacaoFiltro && tipoSolicitacaoFiltro.length === 0)
-      || (classeFiltro && classeFiltro.length === 0) || (faixaCaixasFiltro && faixaCaixasFiltro.length === 0)) {
+      || (classeFiltro && classeFiltro.length === 0) || (faixaCaixasFiltro && faixaCaixasFiltro.length === 0)
+      || (universalizacaoFiltro && universalizacaoFiltro.length === 0)) {
       return res.json({ regrasNegocio: config.regrasNegocio, data: [] });
     }
     const pool = await getPool();
@@ -193,6 +206,7 @@ router.get('/medidas/resumo-grupo2', async (req, res) => {
       area, status, servico: servicoFiltro, regional: regionalFiltro, tipoSolicitacao: tipoSolicitacaoFiltro,
       classe: classeFiltro,
       faixaCaixas: faixaCaixasFiltro,
+      universalizacao: universalizacaoFiltro,
     });
     res.json({ regrasNegocio: config.regrasNegocio, data: resumo });
   } catch (err) {

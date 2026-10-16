@@ -86,7 +86,76 @@ Se, no futuro, precisar trocar para autenticação Windows/AD, ajuste `server/sr
 (`authentication: { type: 'ntlm', ... }` ou `msnodesqlv8` caso opte por usar o driver
 ODBC local).
 
-## 5. Estrutura
+## 5. Filtros do painel
+
+Nas abas **Medidas Pendentes** e **Histórico**, os gráficos e cards respondem a
+estes filtros, enviados à API só quando a seleção é parcial (tudo marcado = sem
+parâmetro). Clique isola uma opção; Ctrl/Cmd+clique combina.
+
+| Filtro | Parâmetro | Origem (SQL Server) | Opções |
+|---|---|---|---|
+| Serviço | `servico` | `TBL_NOTAS.COD_SERVICO` | `COD_SERVICO_FILTRO` / `HIST_SERVICOS_DISPONIVEIS` |
+| Regional | `regional` | `TBL_LOCAIS.COD_SP` | regionais do banco |
+| Tipo de solicitação | `tipoSolicitacao` | `TBL_DADOS_SOLIC.COD_FIN_ANALISE` | LN, AC, SA, OIP, LP, GD, TR, ML, RL, NT, SEM TIPO |
+| Classe | `classe` | `TBL_DADOS_SOLIC.DES_CLASSE` | RESIDENCIAL, COMERCIAL, INDUSTRIAL, OUTRAS |
+| Número de caixas | `faixaCaixas` | `TBL_DADOS_SOLIC.NUM_CAIXAS` | 1, 2, 3, 4 OU MAIS, SEM INFORMAÇÃO |
+| Universalização | `universalizacao` | `TBL_NOTAS.COD_UNIVERSALIZACAO` | Universalizada, Não universalizada, Fora da universalização, Obras de segurança, Outros |
+
+Regras comuns a todas as rotas que aceitam os filtros: parâmetro **ausente** = sem
+filtro; lista **vazia** (`?universalizacao=`) = resposta vazia, sem consultar o
+banco; no Histórico, valor fora da lista = erro 400.
+
+### Universalização
+
+As cinco categorias (`UNIVERSALIZADA`, `NAO_UNIVERSALIZADA`, `FORA_UNIVERSALIZACAO`,
+`SEGURANCA`, `OUTROS`) saem de **uma única expressão SQL**,
+`universalizacaoCase()` em `server/src/queries/tipoSolicitacao.js`, usada pelo
+gráfico "Universalização de obras" e pelo filtro — por isso os dois nunca
+divergem. Os códigos de cada categoria vêm de `regrasHistorico.universalizacao`
+(`HIST_UNIVERSALIZADA_CODIGOS`, `HIST_NAO_UNIVERSALIZADA_CODIGOS`,
+`HIST_FORA_UNIVERSALIZACAO_CODIGOS`, `HIST_SEGURANCA_CODIGOS`); qualquer outro
+código, nulo ou vazio cai em `OUTROS`. Como é atributo da nota, o filtro vale
+para todos os gráficos e cards da aba; no Histórico ele também filtra o próprio
+gráfico de universalização.
+
+**Conferência no banco (DBeaver).** Os totais por categoria e a linha `TOTAL` (a
+soma das cinco) devem bater com o total de notas. Se alterou os códigos no
+`.env`, troque as listas abaixo pelas suas:
+
+```sql
+WITH X AS (
+  SELECT CASE
+           WHEN N.COD_UNIVERSALIZACAO IN ('50','51','55','56') THEN 'UNIVERSALIZADA'
+           WHEN N.COD_UNIVERSALIZACAO IN ('70') THEN 'NAO_UNIVERSALIZADA'
+           WHEN N.COD_UNIVERSALIZACAO IN ('10') THEN 'FORA_UNIVERSALIZACAO'
+           WHEN N.COD_UNIVERSALIZACAO IN ('11','12','13') THEN 'SEGURANCA'
+           ELSE 'OUTROS'
+         END AS CATEGORIA
+  FROM TBL_NOTAS N
+)
+SELECT COALESCE(CATEGORIA, 'TOTAL') AS CATEGORIA, COUNT(*) AS NOTAS
+FROM X
+GROUP BY ROLLUP(CATEGORIA)
+ORDER BY GROUPING(CATEGORIA), CATEGORIA;
+```
+
+No painel, o mesmo teste: com tudo marcado anote o número de um card; isole cada
+uma das cinco categorias e some — o total deve ser o mesmo.
+
+## 6. Testes
+
+```
+cd server
+npm test
+```
+
+Usa o `node --test` (sem dependências extras) e não precisa de banco: verificam
+o CASE de universalização e as regras das rotas com um banco falso, e a
+partição das cinco categorias (cada nota em exatamente uma, soma = total) num
+SQLite em memória (`node:sqlite`; se a versão do Node não tiver, esse teste é
+ignorado). Eles **não** substituem a conferência no banco acima.
+
+## 7. Estrutura
 
 ```
 server/
