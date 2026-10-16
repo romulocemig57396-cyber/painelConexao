@@ -1,7 +1,7 @@
 const config = require('../config');
 const { inClauseParams } = require('./sqlHelpers');
 const { SITUACAO_PRAZO_0070 } = require('./regulatorio');
-const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, condFiltrosSolicitacao } = require('./tipoSolicitacao');
+const { JOIN_TIPO_SOLICITACAO, colunasSolicitacao, condFiltrosSolicitacao } = require('./tipoSolicitacao');
 
 async function buscarResumoMedida0070Regional(pool, filtros = {}) {
   const { grupo1Medidas, statusPendente, codServicoFiltro: servicosPadrao } = config.regrasNegocio;
@@ -53,13 +53,17 @@ async function buscarResumoMedida0070RegionalGranular(pool) {
   const grupo1InClause = inClauseParams(request, 'g1_', grupo1Medidas);
   const statusInClause = inClauseParams(request, 'st_', statusPendente);
 
+  // Agrupa pelos aliases de uma subconsulta (e não repetindo as expressões, que agora
+  // levam parâmetros) — mesmo formato das consultas granulares do Histórico.
   const query = `
+    SELECT SERVICO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, UNIVERSALIZACAO, DES_SITUACAO,
+        COUNT(*) AS QUANTIDADE
+    FROM (
     SELECT
         N.COD_SERVICO AS SERVICO,
         L.COD_SP AS REGIONAL,
-        ${COLUNAS_SOLICITACAO},
-        ${SITUACAO_PRAZO_0070} AS DES_SITUACAO,
-        COUNT(*) AS QUANTIDADE
+        ${colunasSolicitacao(request)},
+        ${SITUACAO_PRAZO_0070} AS DES_SITUACAO
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N ON M.NUM_NOTA = N.NUM_NOTA
     ${JOIN_TIPO_SOLICITACAO}
@@ -75,8 +79,9 @@ async function buscarResumoMedida0070RegionalGranular(pool) {
           AND M1.COD_MEDIDA IN (${grupo1InClause})
           AND M1.COD_STAT_USU IN (${statusInClause})
       )
-    GROUP BY N.COD_SERVICO, L.COD_SP, ${TIPO_SOLICITACAO}, ${CLASSE}, ${FAIXA_CAIXAS}, ${SITUACAO_PRAZO_0070}
-    ORDER BY SERVICO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, DES_SITUACAO;
+    ) X
+    GROUP BY SERVICO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, UNIVERSALIZACAO, DES_SITUACAO
+    ORDER BY SERVICO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, UNIVERSALIZACAO, DES_SITUACAO;
   `;
 
   const result = await request.query(query);

@@ -4,7 +4,7 @@
 const SOMA_VALOR_OBRA = 'SUM(CASE WHEN C.VAL_TOTAL_OBRA > 0 THEN C.VAL_TOTAL_OBRA END)';
 
 // Dimensões dos filtros do painel externo, nas consultas granulares da exportação.
-const DIMENSOES_FILTROS = ['SERVICO', 'MERCADO', 'REGIONAL', 'TIPO_SOLICITACAO', 'CLASSE', 'FAIXA_CAIXAS'];
+const DIMENSOES_FILTROS = ['SERVICO', 'MERCADO', 'REGIONAL', 'TIPO_SOLICITACAO', 'CLASSE', 'FAIXA_CAIXAS', 'UNIVERSALIZACAO'];
 
 /**
  * Transforma a consulta interna de um gráfico do histórico (que expõe NUM_NOTA e

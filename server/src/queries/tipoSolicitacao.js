@@ -63,6 +63,13 @@ const COLUNAS_SOLICITACAO = `${TIPO_SOLICITACAO} AS TIPO_SOLICITACAO,
             ${CLASSE} AS CLASSE,
             ${FAIXA_CAIXAS} AS FAIXA_CAIXAS`;
 
+// COLUNAS_SOLICITACAO + a categoria de universalização (que precisa do request pros
+// parâmetros do CASE) — dimensões dos filtros do painel externo.
+function colunasSolicitacao(request) {
+  return `${COLUNAS_SOLICITACAO},
+            ${universalizacaoCase(request)} AS UNIVERSALIZACAO`;
+}
+
 /**
  * Condições `AND <expr> IN (...)` pros filtros de tipo de solicitação, classe,
  * faixa de caixas e universalização — string vazia pra cada filtro não informado
@@ -94,5 +101,6 @@ module.exports = {
   FAIXA_CAIXAS,
   COLUNAS_SOLICITACAO,
   universalizacaoCase,
+  colunasSolicitacao,
   condFiltrosSolicitacao,
 };

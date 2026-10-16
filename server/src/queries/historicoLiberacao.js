@@ -2,7 +2,7 @@ const { sql } = require('../db');
 const config = require('../config');
 const { inClauseParams, campoNaoContemPalavra, campoIgual, medidaCasePorServico } = require('./sqlHelpers');
 const { MAPEAMENTO_MEDIDA_POR_SERVICO, todosCodigosMedida } = require('./mapeamentoMedidaServico');
-const { JOIN_TIPO_SOLICITACAO, COLUNAS_SOLICITACAO, condFiltrosSolicitacao } = require('./tipoSolicitacao');
+const { JOIN_TIPO_SOLICITACAO, colunasSolicitacao, condFiltrosSolicitacao } = require('./tipoSolicitacao');
 const { DIMENSOES_FILTROS, consultaValorObra, totalValorObra } = require('./valorObra');
 
 /**
@@ -120,7 +120,7 @@ async function buscarHistoricoLiberacaoGranular(pool, { valorObra = false } = {}
             N.COD_SERVICO AS SERVICO,
             N.DES_MERCADO AS MERCADO,
             L.COD_SP AS REGIONAL,
-            ${COLUNAS_SOLICITACAO},
+            ${colunasSolicitacao(request)},
             CASE
                 WHEN M.COD_MEDIDA = ${medComObrasCase} THEN 'COM_OBRAS'
                 WHEN M.COD_MEDIDA = ${medSemObrasCase} THEN 'SEM_OBRAS'
@@ -139,12 +139,12 @@ async function buscarHistoricoLiberacaoGranular(pool, { valorObra = false } = {}
   const query = valorObra
     ? consultaValorObra(interna, 'TIPO', DIMENSOES_FILTROS)
     : `
-    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, TIPO, COUNT(*) AS QTD
+    SELECT MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, UNIVERSALIZACAO, TIPO, COUNT(*) AS QTD
     FROM (${interna}
     ) X
     WHERE TIPO IS NOT NULL
-    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, TIPO
-    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, TIPO;
+    GROUP BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, UNIVERSALIZACAO, TIPO
+    ORDER BY MES, SERVICO, MERCADO, REGIONAL, TIPO_SOLICITACAO, CLASSE, FAIXA_CAIXAS, UNIVERSALIZACAO, TIPO;
   `;
 
   const result = await request.query(query);

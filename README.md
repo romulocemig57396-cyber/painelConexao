@@ -118,6 +118,12 @@ código, nulo ou vazio cai em `OUTROS`. Como é atributo da nota, o filtro vale
 para todos os gráficos e cards da aba; no Histórico ele também filtra o próprio
 gráfico de universalização.
 
+No **painel externo** (Portal), o mesmo filtro existe nas abas Histórico e Medidas
+Pendentes: a exportação (`exportarPainelExterno.js`) envia a categoria em cada
+linha e o filtro roda no navegador. Depois de atualizar o código, rode
+"Atualizar painel externo" — enquanto isso não acontece, as linhas antigas do
+Portal aparecem todas como "Outros".
+
 **Conferência no banco (DBeaver).** Os totais por categoria e a linha `TOTAL` (a
 soma das cinco) devem bater com o total de notas. Se alterou os códigos no
 `.env`, troque as listas abaixo pelas suas:

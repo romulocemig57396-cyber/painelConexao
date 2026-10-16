@@ -14,6 +14,12 @@ Mudanças relevantes do Painel de Medidas Pendentes. Formato baseado em
   `/api/historico/valor-obra` e `/api/medidas/*`): ausente = sem filtro; lista
   vazia = resposta vazia sem consultar o banco; valor inválido no Histórico =
   erro 400.
+- Filtro **Universalização** também no **painel externo** (Histórico e Medidas
+  Pendentes): a exportação passa a enviar `universalizacao` em cada linha
+  (histórico, medidas, medida 0070 por regional e valor da obra) e o Portal ganhou
+  a coluna, a migração e o chip. O card "Valor da obra" acompanha o filtro. É
+  preciso rodar "Atualizar painel externo" para os dados novos chegarem; sem isso
+  o chip aparece, mas todas as linhas antigas ficam em "Outros".
 - `universalizacaoDisponiveis` em `regrasNegocio` e `regrasHistorico` (config).
 - Parâmetro opcional `rotulos` no `ChipMultiFilter` (texto exibido diferente do
   valor enviado à API).
