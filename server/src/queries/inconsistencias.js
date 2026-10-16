@@ -51,7 +51,12 @@ async function buscarInconsistencias(pool) {
 
   // Tipo 1: medida de resposta só é "devida" em ENCE ou CONC — qualquer outro
   // status (ABER/ANDM pendente, CANC, ou qualquer outro) é indevido.
-  const tipo1StatusValidosInClause = inClauseParams(request, 't1v_', tipo1StatusValidos);
+  // COD_STAT_USU é composto ('CONC PCOR', 'ENCE RTEC'...), então a checagem é
+  // por palavra inteira: indevido = não contém nenhuma das palavras válidas.
+  // (`NOT IN` com igualdade exata marcava 'CONC PCOR' como indevido.)
+  const tipo1StatusIndevido = tipo1StatusValidos
+    .map((palavra, index) => campoNaoContemPalavra('M.COD_STAT_USU', request, `t1v_${index}`, palavra))
+    .join(' AND ');
 
   // Tipos 5/6: resposta dada (medida não cancelada) mas a medida-alvo
   // correspondente ainda pendente (ABER/ANDM) — checagens sempre por palavra
@@ -88,7 +93,7 @@ async function buscarInconsistencias(pool) {
     FROM TBL_MEDIDAS M
     INNER JOIN TBL_NOTAS N ON M.NUM_NOTA = N.NUM_NOTA
     WHERE M.COD_MEDIDA IN (${tipo1MedidasInClause})
-      AND M.COD_STAT_USU NOT IN (${tipo1StatusValidosInClause})${filtroBase}
+      AND ${tipo1StatusIndevido}${filtroBase}
 
     UNION ALL
     SELECT
